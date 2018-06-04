@@ -60,12 +60,12 @@ endif()
 
 # Jerry standalones
 if(JERRY_CMDLINE)
-  jerry_create_executable("jerry" "main-unix.c" "cli.c")
+  jerry_create_executable("jerry" "main-unix.c" "cli.c" "module-unix.c")
   target_link_libraries("jerry" jerry-ext jerry-port-default)
 endif()
 
 if(JERRY_CMDLINE_TEST)
-  jerry_create_executable("jerry-test" "main-unix-test.c" "benchmarking.c")
+  jerry_create_executable("jerry-test" "main-unix-test.c" "benchmarking.c" "module-unix.c")
   target_link_libraries("jerry-test" jerry-port-default-minimal)
 endif()
 

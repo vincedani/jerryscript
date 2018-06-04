@@ -141,6 +141,19 @@ void jerryx_module_clear_cache (const jerry_value_t name,
                                 const jerryx_module_resolver_t **resolvers,
                                 size_t count);
 
+/**
+ * Create an error related to modules
+ *
+ * Creates an error object of the requested type with the additional property "moduleName" the value of which is a
+ * string containing the name of the module that was requested when the error occurred.
+ *
+ * @return the error
+ */
+jerry_value_t
+jerryx_module_create_error (jerry_error_t error_type,
+                            const jerry_char_t *message,
+                            const jerry_value_t module_name);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

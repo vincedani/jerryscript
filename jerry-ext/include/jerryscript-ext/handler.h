@@ -17,6 +17,7 @@
 #define JERRYX_HANDLER_H
 
 #include "jerryscript.h"
+#include "module.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -40,6 +41,14 @@ jerry_value_t jerryx_handler_gc (const jerry_value_t func_obj_val, const jerry_v
                                  const jerry_value_t args_p[], const jerry_length_t args_cnt);
 jerry_value_t jerryx_handler_print (const jerry_value_t func_obj_val, const jerry_value_t this_p,
                                     const jerry_value_t args_p[], const jerry_length_t args_cnt);
+jerry_value_t jerryx_handler_require (const jerry_value_t func_obj_val, const jerry_value_t this_p,
+                                      const jerry_value_t args_p[], const jerry_length_t args_cnt);
+
+/*
+ * Resolver handler extension
+ */
+void jerryx_handler_require_set_resolvers (jerryx_module_resolver_t **resolvers,
+                                           const uint8_t resolvers_cnt);
 
 /*
  * Port API extension

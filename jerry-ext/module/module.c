@@ -29,7 +29,7 @@ static const jerry_char_t *module_name_not_string = (jerry_char_t *) "Module nam
  *
  * @return the error
  */
-static jerry_value_t
+jerry_value_t
 jerryx_module_create_error (jerry_error_t error_type, /**< the type of error to create */
                             const jerry_char_t *message, /**< the error message */
                             const jerry_value_t module_name) /**< the module name */

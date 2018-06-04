@@ -22,6 +22,7 @@
 #include "jerryscript-ext/handler.h"
 #include "jerryscript-port.h"
 #include "jerryscript-port-default.h"
+#include "module-unix.h"
 
 #include "cli.h"
 
@@ -597,9 +598,17 @@ main (int argc,
     jerry_debugger_init (debug_port);
   }
 
+  jerryx_module_resolver_t *resolvers[] =
+  {
+    &js_file_loader,
+    &jerryx_module_native_resolver
+  };
+  jerryx_handler_require_set_resolvers (resolvers, 2);
+
   register_js_function ("assert", jerryx_handler_assert);
   register_js_function ("gc", jerryx_handler_gc);
   register_js_function ("print", jerryx_handler_print);
+  register_js_function ("require", jerryx_handler_require);
 
   jerry_value_t ret_value = jerry_create_undefined ();
 
@@ -717,6 +726,7 @@ main (int argc,
         register_js_function ("assert", jerryx_handler_assert);
         register_js_function ("gc", jerryx_handler_gc);
         register_js_function ("print", jerryx_handler_print);
+        register_js_function ("require", jerryx_handler_require);
 
         ret_value = jerry_create_undefined ();
       }
