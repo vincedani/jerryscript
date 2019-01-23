@@ -2373,6 +2373,10 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
   context.last_statement.current_p = NULL;
   context.status_flags |= parse_opts & PARSER_STRICT_MODE_MASK;
 
+#ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
+  context.module_context_p = NULL;
+#endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
+
 #ifndef CONFIG_DISABLE_ES2015_CLASS
   context.status_flags |= PARSER_GET_CLASS_PARSER_OPTS (parse_opts);
 #endif /* !CONFIG_DISABLE_ES2015_CLASS */
@@ -2450,6 +2454,14 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
     JERRY_ASSERT (context.last_cbc_opcode == PARSER_CBC_UNAVAILABLE);
     JERRY_ASSERT (context.allocated_buffer_p == NULL);
 
+#ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
+    if (context.module_context_p != NULL)
+    {
+      parser_module_handle_requests (&context);
+      parser_module_load_modules (&context);
+    }
+#endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
+
     compiled_code = parser_post_processing (&context);
     parser_list_free (&context.literal_pool);
 
@@ -2498,6 +2510,9 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
   }
 #endif /* PARSER_DUMP_BYTE_CODE */
 
+#ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
+  parser_module_cleanup_module_context (&context);
+#endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
   parser_stack_free (&context);
 
   return compiled_code;

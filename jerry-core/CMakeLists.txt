@@ -40,6 +40,7 @@ set(FEATURE_VALGRIND           OFF     CACHE BOOL   "Enable Valgrind support?")
 set(FEATURE_VM_EXEC_STOP       OFF     CACHE BOOL   "Enable VM execution stopping?")
 set(MEM_HEAP_SIZE_KB           "512"   CACHE STRING "Size of memory heap, in kilobytes")
 set(REGEXP_RECURSION_LIMIT     "0"     CACHE STRING "Limit of regexp recursion depth")
+set(FEATURE_MODULE_SYSTEM      OFF     CACHE BOOL   "Enable module system")
 
 # Option overrides
 if(USING_MSVC)
@@ -96,6 +97,7 @@ message(STATUS "FEATURE_VALGRIND            " ${FEATURE_VALGRIND})
 message(STATUS "FEATURE_VM_EXEC_STOP        " ${FEATURE_VM_EXEC_STOP})
 message(STATUS "MEM_HEAP_SIZE_KB            " ${MEM_HEAP_SIZE_KB})
 message(STATUS "REGEXP_RECURSION_LIMIT      " ${REGEXP_RECURSION_LIMIT})
+message(STATUS "FEATURE_MODULE_SYSTEM       " ${FEATURE_MODULE_SYSTEM})
 
 # Include directories
 set(INCLUDE_CORE_PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -264,6 +266,11 @@ endif()
 # Enable VM execution stopping
 if (FEATURE_VM_EXEC_STOP)
   set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_VM_EXEC_STOP)
+endif()
+
+# Enable ES6 module system
+if (FEATURE_MODULE_SYSTEM)
+  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_ENABLE_MODULE_SYSTEM)
 endif()
 
 # Size of heap
