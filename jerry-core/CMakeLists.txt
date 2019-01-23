@@ -41,6 +41,7 @@ set(FEATURE_VM_EXEC_STOP       OFF     CACHE BOOL   "Enable VM execution stoppin
 set(MEM_HEAP_SIZE_KB           "512"   CACHE STRING "Size of memory heap, in kilobytes")
 set(REGEXP_RECURSION_LIMIT     "0"     CACHE STRING "Limit of regexp recursion depth")
 set(VM_RECURSION_LIMIT         "0"     CACHE STRING "Limit of VM recursion depth")
+set(FEATURE_MODULE_SYSTEM      OFF     CACHE BOOL   "Enable module system")
 
 # Option overrides
 if(USING_MSVC)
@@ -98,6 +99,7 @@ message(STATUS "FEATURE_VM_EXEC_STOP        " ${FEATURE_VM_EXEC_STOP})
 message(STATUS "MEM_HEAP_SIZE_KB            " ${MEM_HEAP_SIZE_KB})
 message(STATUS "REGEXP_RECURSION_LIMIT      " ${REGEXP_RECURSION_LIMIT})
 message(STATUS "VM_RECURSION_LIMIT          " ${VM_RECURSION_LIMIT})
+message(STATUS "FEATURE_MODULE_SYSTEM       " ${FEATURE_MODULE_SYSTEM})
 
 # Include directories
 set(INCLUDE_CORE_PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -113,6 +115,7 @@ set(INCLUDE_CORE_PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/jmem"
     "${CMAKE_CURRENT_SOURCE_DIR}/jrt"
     "${CMAKE_CURRENT_SOURCE_DIR}/lit"
+    "${CMAKE_CURRENT_SOURCE_DIR}/module"
     "${CMAKE_CURRENT_SOURCE_DIR}/parser/js"
     "${CMAKE_CURRENT_SOURCE_DIR}/parser/regexp"
     "${CMAKE_CURRENT_SOURCE_DIR}/vm")
@@ -133,6 +136,7 @@ file(GLOB SOURCE_CORE_FILES
      jmem/*.c
      jrt/*.c
      lit/*.c
+     module/*.c
      parser/js/*.c
      parser/regexp/*.c
      vm/*.c)
@@ -271,6 +275,11 @@ endif()
 # Enable VM execution stopping
 if (FEATURE_VM_EXEC_STOP)
   set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_VM_EXEC_STOP)
+endif()
+
+# Enable ES6 module system
+if (FEATURE_MODULE_SYSTEM)
+  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_ENABLE_MODULE_SYSTEM)
 endif()
 
 # Size of heap

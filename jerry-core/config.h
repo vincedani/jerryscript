@@ -50,6 +50,12 @@
 # define CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
 #endif /* CONFIG_DISABLE_ES2015 */
 
+#if (defined (CONFIG_DISABLE_ES2015) || !defined (JERRY_ENABLE_MODULE_SYSTEM))
+# define CONFIG_DISABLE_ES2015_MODULE_SYSTEM
+#elif (defined (CONFIG_DISABLE_ES2015) && defined (JERRY_ENABLE_MODULE_SYSTEM))
+#  error "ES2015 feature set is not configured correctly. The module system is ES2015 feature"
+#endif /* CONFIG_DISABLE_ES2015 || !JERRY_ENABLE_MODULE_SYSTEM */
+
 /**
  * Size of heap
  */

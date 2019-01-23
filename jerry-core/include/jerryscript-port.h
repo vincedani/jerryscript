@@ -179,6 +179,32 @@ struct jerry_context_t *jerry_port_get_current_context (void);
  */
 void jerry_port_sleep (uint32_t sleep_time);
 
+#ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
+/**
+ * Opens the imported module from the import statement.
+ *
+ * Note:
+ *      This port function is called by jerry-core when ES2015_MODULE_SYSTEM
+ *      is enabled. The path is specified in the import statement's 'from "..."'
+ *      section.
+ *
+ *  @param file_name_p Module path that points to the EcmaScript file in the
+ *                   filesystem.
+ *  @param out_size_p The opened file's size in bytes.
+ *
+ *  @return the pointer to the buffer which contains the content of the file.
+ */
+uint8_t *jerry_port_module_read_source (const char *file_name_p, size_t *out_size_p);
+
+/**
+ * Frees the allocated buffer after the module is imported properly and the
+ * content of the file is not needed anymore.
+ *
+ * @param buffer_p The pointer the allocated buffer.
+ */
+void jerry_port_module_release_source (uint8_t *buffer_p);
+#endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
+
 /**
  * @}
  */
