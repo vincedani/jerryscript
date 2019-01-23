@@ -475,23 +475,6 @@ void jerry_port_fatal (jerry_fatal_code_t code)
 } /* jerry_port_fatal */
 
 /**
- * Provide log message implementation for the engine.
- */
-void
-jerry_port_log (jerry_log_level_t level, /**< log level */
-                const char *format, /**< format string */
-                ...)  /**< parameters */
-{
-  if (level <= jerry_log_level)
-  {
-    va_list args;
-    va_start (args, format);
-    vfprintf (stderr, format, args);
-    va_end (args);
-  }
-} /* jerry_port_log */
-
-/**
  * Dummy function to get the time zone adjustment.
  *
  * @return 0
