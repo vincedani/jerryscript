@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
+#include "jcontext.h"
 #include "jerryscript.h"
 #include "js-parser.h"
 #include "js-parser-internal.h"
 #include "jerryscript-port.h"
-#include "jcontext.h"
 
-#include "ecma-exceptions.h"
 #include "ecma-function-object.h"
+#include "ecma-gc.h"
+#include "ecma-globals.h"
 #include "ecma-helpers.h"
-#include "ecma-literal-storage.h"
 #include "ecma-lex-env.h"
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
@@ -43,19 +43,19 @@ parser_module_check_for_duplicates_in_node (parser_module_node_t *module_node_p,
 
   while (import_names_p != NULL)
   {
-    JERRY_ASSERT (import_names_p->import_name_p != NULL);
-
-    uint8_t *current_p = import_names_p->import_name_p;
-    prop_length_t current_length = import_names_p->import_name_length;
-
-    if (current_p != NULL && current_length == import_name_length)
+    if (import_names_p->import_name_p != NULL)
     {
-      if (memcmp (current_p, import_name_p, current_length) == 0)
+      uint8_t *current_p = import_names_p->import_name_p;
+      prop_length_t current_length = import_names_p->import_name_length;
+
+      if (current_p != NULL && current_length == import_name_length)
       {
-        return true;
+        if (memcmp (current_p, import_name_p, current_length) == 0)
+        {
+          return true;
+        }
       }
     }
-
     import_names_p = import_names_p->next_p;
   }
   return false;
@@ -109,13 +109,20 @@ parser_module_free_saved_names (parser_module_node_t *module_node_p) /**< module
   }
 
   parser_module_names_t *current_p = module_node_p->module_names_p;
-  parser_module_names_t *next_p;
 
   for (uint16_t i = 0; i < module_node_p->module_request_count; i++)
   {
-    next_p = current_p->next_p;
-    parser_free (current_p->import_name_p, current_p->import_name_length * sizeof (uint8_t));
-    parser_free (current_p->local_name_p, current_p->local_name_length * sizeof (uint8_t));
+    parser_module_names_t *next_p = current_p->next_p;
+
+    if (current_p->import_name_p != NULL)
+    {
+      parser_free (current_p->import_name_p, current_p->import_name_length * sizeof (uint8_t));
+    }
+
+    if (current_p->local_name_p != NULL)
+    {
+      parser_free (current_p->local_name_p, current_p->local_name_length * sizeof (uint8_t));
+    }
     parser_free (current_p, sizeof (parser_module_names_t));
     current_p = next_p;
   }
@@ -246,15 +253,32 @@ parser_module_add_item_to_node (parser_context_t *context_p, /**< parser context
   new_names_p->next_p = module_node_p->module_names_p;
   module_node_p->module_names_p = new_names_p;
 
-  prop_length_t length = import_name_p->prop.length;
-  module_node_p->module_names_p->import_name_length = length;
-  module_node_p->module_names_p->import_name_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
-  memcpy (module_node_p->module_names_p->import_name_p, import_name_p->u.char_p, length);
+  /* An empty record if the whole module is requested */
+  if (import_name_p == NULL)
+  {
+    module_node_p->module_names_p->import_name_p = NULL;
+    module_node_p->module_names_p->import_name_length = 0;
+  }
+  else
+  {
+    prop_length_t length = import_name_p->prop.length;
+    module_node_p->module_names_p->import_name_length = length;
+    module_node_p->module_names_p->import_name_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
+    memcpy (module_node_p->module_names_p->import_name_p, import_name_p->u.char_p, length);
+  }
 
-  length = local_name_p->prop.length;
-  module_node_p->module_names_p->local_name_length = length;
-  module_node_p->module_names_p->local_name_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
-  memcpy (module_node_p->module_names_p->local_name_p, local_name_p->u.char_p, length);
+  if (local_name_p == NULL)
+  {
+    module_node_p->module_names_p->local_name_p = NULL;
+    module_node_p->module_names_p->local_name_length = 0;
+  }
+  else
+  {
+    prop_length_t length = local_name_p->prop.length;
+    module_node_p->module_names_p->local_name_length = length;
+    module_node_p->module_names_p->local_name_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
+    memcpy (module_node_p->module_names_p->local_name_p, local_name_p->u.char_p, length);
+  }
 
   module_node_p->module_request_count++;
 } /* parser_module_add_item_to_node */
@@ -459,8 +483,8 @@ parser_module_parse_import_item_list (parser_context_t *context_p, /**< parser c
   if (context_p->token.type == LEXER_LITERAL
       && lexer_compare_raw_identifier_to_current (context_p, "from", 4))
   {
-    /* TODO: This part is going to be implemented in the next part of the patch. */
-    parser_raise_error (context_p, PARSER_ERR_NOT_IMPLEMENTED);
+    parser_module_add_item_to_node (context_p, module_node_p, NULL, NULL, true);
+    return;
   }
 
   bool has_import_name = false;
@@ -602,6 +626,33 @@ parser_module_compare_property_name_with_import (parser_module_node_t *module_no
   return false;
 } /* parser_module_compare_property_name_with_import */
 
+static bool
+parser_module_is_whole_module_requested (parser_module_node_t *module_node_p, /**< module node */
+                                         parser_module_names_t *eventual_names_p) /**< [out] used names */
+{
+  parser_module_names_t *current_p = module_node_p->module_names_p;
+
+  if (current_p == NULL)
+  {
+    return false;
+  }
+
+  for (uint16_t i = 0; i < module_node_p->module_request_count; i++)
+  {
+    parser_module_names_t *next_p = current_p->next_p;
+
+    if (current_p->local_name_p == NULL)
+    {
+      *eventual_names_p = *current_p;
+      return true;
+    }
+
+    current_p = next_p;
+  }
+
+  return false;
+} /* parser_module_is_whole_module_requested */
+
 /**
  * Run an EcmaScript module created by parser_module_parse.
  */
@@ -655,6 +706,23 @@ parser_module_run (const char *file_path_p, /**< file path */
   ecma_object_t *global_obj_p = ecma_builtin_get (ECMA_BUILTIN_ID_GLOBAL);
   ecma_property_header_t *module_properties_p = ecma_get_property_list (scope_p);
 
+  parser_module_names_t collective_name = { 0, 0, 0, 0, 0 };
+  bool is_whole_module_requested = parser_module_is_whole_module_requested (module_node_p, &collective_name);
+
+  ecma_object_t *module_obj_p;
+
+  if (collective_name.import_name_p == NULL)
+  {
+    module_obj_p = ecma_builtin_get (ECMA_BUILTIN_ID_GLOBAL);
+    ecma_ref_object (module_obj_p);
+  }
+  else
+  {
+    module_obj_p = ecma_create_object (ecma_builtin_get (ECMA_BUILTIN_ID_OBJECT_PROTOTYPE),
+                                       0,
+                                       ECMA_OBJECT_TYPE_GENERAL);
+  }
+
   while (module_properties_p != NULL)
   {
     ecma_property_pair_t *prop_pair_p = (ecma_property_pair_t *) module_properties_p;
@@ -678,13 +746,31 @@ parser_module_run (const char *file_path_p, /**< file path */
         continue;
       }
 
+      if (is_whole_module_requested)
+      {
+        ecma_string_t *new_property_name_p = ecma_new_ecma_string_from_utf8 (exported_name.import_name_p,
+                                                                             exported_name.import_name_length);
+
+        ecma_property_t *new_property_p;
+        ecma_create_named_data_property (module_obj_p,
+                                         new_property_name_p,
+                                         ECMA_PROPERTY_NOT_WRITABLE,
+                                         &new_property_p);
+
+        ecma_named_data_property_assign_value (module_obj_p,
+                                              ECMA_PROPERTY_VALUE_PTR (new_property_p),
+                                              prop_pair_p->values[i].value);
+
+        ecma_deref_ecma_string (new_property_name_p);
+      }
+
       parser_module_names_t new_name;
       if (parser_module_compare_property_name_with_import (module_node_p, &exported_name, &new_name))
       {
-        ecma_property_t *new_property_p;
         ecma_string_t *new_property_name_p = ecma_new_ecma_string_from_utf8 (new_name.import_name_p,
                                                                              new_name.import_name_length);
 
+        ecma_property_t *new_property_p;
         ecma_create_named_data_property (global_obj_p,
                                          new_property_name_p,
                                          ECMA_PROPERTY_NOT_WRITABLE,
@@ -696,6 +782,7 @@ parser_module_run (const char *file_path_p, /**< file path */
 
         ecma_deref_ecma_string (new_property_name_p);
       }
+
       ecma_deref_ecma_string (prop_name_p);
     }
 
@@ -703,7 +790,24 @@ parser_module_run (const char *file_path_p, /**< file path */
                                             module_properties_p->next_property_cp);
   }
 
+  if (is_whole_module_requested && collective_name.import_name_p != NULL)
+  {
+    ecma_string_t *collective_name_p = ecma_new_ecma_string_from_utf8 (collective_name.import_name_p,
+                                                                       collective_name.import_name_length);
+    ecma_property_t *collective_prop_p;
+    ecma_create_named_data_property (global_obj_p,
+                                     collective_name_p,
+                                     ECMA_PROPERTY_NOT_WRITABLE,
+                                     &collective_prop_p);
+
+    ecma_named_data_property_assign_value (global_obj_p,
+                                           ECMA_PROPERTY_VALUE_PTR (collective_prop_p),
+                                           ecma_make_object_value (module_obj_p));
+    ecma_deref_ecma_string (collective_name_p);
+  }
+
   ecma_module_add_lex_env (scope_p);
+  ecma_deref_object (module_obj_p);
   jerry_release_value (func_val);
   parser_module_free_saved_names (&export_node);
 
@@ -748,6 +852,42 @@ parser_module_load_modules (parser_context_t *context_p) /**< parser context */
 } /* parser_module_load_modules */
 
 /**
+ * Check if the import statement contains valid aliases.
+ */
+static void
+parser_check_valid_aliases (parser_context_t *context_p)
+{
+  parser_module_node_t *imports_p = context_p->module_context_p->imports_p;
+  if (imports_p == NULL)
+  {
+    return;
+  }
+
+  parser_module_names_t collective_name;
+  bool is_whole_module_requested = parser_module_is_whole_module_requested (imports_p, &collective_name);
+
+  if (!is_whole_module_requested || (is_whole_module_requested && collective_name.import_name_p != NULL))
+  {
+    return;
+  }
+
+  parser_module_names_t *import_name_p = imports_p->module_names_p;
+  for (uint16_t i = 0; i < imports_p->module_request_count; ++i)
+  {
+    if (import_name_p->local_name_p != NULL
+       && (import_name_p->import_name_length == import_name_p->local_name_length)
+       && memcmp (import_name_p->local_name_p,
+                  import_name_p->local_name_p,
+                  import_name_p->local_name_length) == 0)
+    {
+      parser_raise_error (context_p, PARSER_ERR_INVALID_ALIASES);
+    }
+
+    import_name_p = import_name_p->next_p;
+  }
+} /* parser_check_valid_aliases */
+
+/**
  * Handle import requests.
  * Check if imported variables are exported in the appropriate module.
  * Raise parser error if imported item is not exported.
@@ -755,22 +895,32 @@ parser_module_load_modules (parser_context_t *context_p) /**< parser context */
 void
 parser_module_handle_requests (parser_context_t *context_p) /**< parser context */
 {
-  parser_module_context_t *module_context_p = JERRY_CONTEXT (module_top_context_p);
+  parser_check_valid_aliases (context_p);
 
-  if (context_p->module_context_p->exports_p == NULL || module_context_p == NULL)
+  parser_module_context_t *parent_context_p = JERRY_CONTEXT (module_top_context_p);
+
+  if (context_p->module_context_p->exports_p == NULL || parent_context_p == NULL)
   {
     return;
   }
 
   bool throw_error = false;
 
-  parser_module_names_t *import_name_p = module_context_p->imports_p->module_names_p;
+  parser_module_names_t *import_name_p = parent_context_p->imports_p->module_names_p;
   parser_module_names_t *current_exports_p = context_p->module_context_p->exports_p->module_names_p;
   parser_module_names_t *export_iterator_p;
 
-  for (uint16_t i = 0; i < module_context_p->imports_p->module_request_count; ++i)
+  for (uint16_t i = 0; i < parent_context_p->imports_p->module_request_count; ++i)
   {
     bool request_is_found_in_module = false;
+
+    /* Whole module is requested, so searching in exports is unnecessary. */
+    if (import_name_p->local_name_p == NULL)
+    {
+      request_is_found_in_module = true;
+      break;
+    }
+
     export_iterator_p = current_exports_p;
 
     for (uint16_t j = 0; j < context_p->module_context_p->exports_p->module_request_count;
@@ -800,7 +950,7 @@ parser_module_handle_requests (parser_context_t *context_p) /**< parser context 
     import_name_p = import_name_p->next_p;
   }
 
-  *module_context_p->exports_p = *context_p->module_context_p->exports_p;
+  *parent_context_p->exports_p = *context_p->module_context_p->exports_p;
   parser_free (context_p->module_context_p->exports_p, sizeof (parser_module_node_t));
 
   if (throw_error)

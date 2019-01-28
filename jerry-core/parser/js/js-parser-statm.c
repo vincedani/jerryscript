@@ -1722,7 +1722,7 @@ parser_parse_import_statement (parser_context_t *context_p) /**< context */
     parser_raise_error (context_p, PARSER_ERR_FROM_EXPECTED);
   }
 
-  // Store the note temporary in case of the lexer_expect_object_literal_id throws an error.
+  /* Store the note temporary in case of the lexer_expect_object_literal_id throws an error. */
   context_p->module_context_p->cleanup_node = import_node;
   context_p->module_context_p->has_error = true;
 
