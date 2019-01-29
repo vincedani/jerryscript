@@ -117,11 +117,13 @@ parser_module_free_saved_names (parser_module_node_t *module_node_p) /**< module
     if (current_p->import_name_p != NULL)
     {
       parser_free (current_p->import_name_p, current_p->import_name_length * sizeof (uint8_t));
+      current_p->import_name_p = NULL;
     }
 
     if (current_p->local_name_p != NULL)
     {
       parser_free (current_p->local_name_p, current_p->local_name_length * sizeof (uint8_t));
+      current_p->local_name_p = NULL;
     }
     parser_free (current_p, sizeof (parser_module_names_t));
     current_p = next_p;
@@ -706,7 +708,9 @@ parser_module_run (const char *file_path_p, /**< file path */
   ecma_object_t *global_obj_p = ecma_builtin_get (ECMA_BUILTIN_ID_GLOBAL);
   ecma_property_header_t *module_properties_p = ecma_get_property_list (scope_p);
 
-  parser_module_names_t collective_name = { 0, 0, 0, 0, 0 };
+  parser_module_names_t collective_name;
+  memset (&collective_name, 0, sizeof (parser_module_names_t));
+
   bool is_whole_module_requested = parser_module_is_whole_module_requested (module_node_p, &collective_name);
 
   ecma_object_t *module_obj_p;
@@ -972,4 +976,29 @@ parser_module_check_request_place (parser_context_t *context_p)
     parser_raise_error (context_p, PARSER_ERR_MODULE_UNEXPECTED);
   }
 } /* parser_module_check_request_place */
+
+void parser_module_handle_from_clause (parser_context_t *context_p, parser_module_node_t *module_node_p)
+{
+  /* Store the note temporary in case of the lexer_expect_object_literal_id throws an error. */
+  context_p->module_context_p->cleanup_node = *module_node_p;
+  context_p->module_context_p->has_error = true;
+
+  lexer_expect_object_literal_id (context_p, LEXER_OBJ_IDENT_NO_OPTS);
+
+  if (context_p->lit_object.literal_p->prop.length == 0)
+  {
+    parser_raise_error (context_p, PARSER_ERR_PROPERTY_IDENTIFIER_EXPECTED);
+  }
+
+  module_node_p->script_path_length = (prop_length_t)(context_p->lit_object.literal_p->prop.length + 1);
+  module_node_p->script_path_p =
+  (uint8_t *) parser_malloc (context_p, module_node_p->script_path_length * sizeof (uint8_t));
+
+  memcpy (module_node_p->script_path_p,
+          context_p->lit_object.literal_p->u.char_p,
+          module_node_p->script_path_length);
+  module_node_p->script_path_p[module_node_p->script_path_length - 1] = '\0';
+  lexer_next_token (context_p);
+
+} /* parser_module_handle_from_clause */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */

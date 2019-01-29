@@ -1722,29 +1722,10 @@ parser_parse_import_statement (parser_context_t *context_p) /**< context */
     parser_raise_error (context_p, PARSER_ERR_FROM_EXPECTED);
   }
 
-  /* Store the note temporary in case of the lexer_expect_object_literal_id throws an error. */
-  context_p->module_context_p->cleanup_node = import_node;
-  context_p->module_context_p->has_error = true;
-
-  lexer_expect_object_literal_id (context_p, LEXER_OBJ_IDENT_NO_OPTS);
-
-  if (context_p->lit_object.literal_p->prop.length == 0)
-  {
-    parser_raise_error (context_p, PARSER_ERR_PROPERTY_IDENTIFIER_EXPECTED);
-  }
-
-  import_node.script_path_length = (prop_length_t)(context_p->lit_object.literal_p->prop.length + 1);
-  import_node.script_path_p =
-  (uint8_t *) parser_malloc (context_p, import_node.script_path_length * sizeof (uint8_t));
-
-  memcpy (import_node.script_path_p,
-          context_p->lit_object.literal_p->u.char_p,
-          import_node.script_path_length);
-  import_node.script_path_p[import_node.script_path_length - 1] = '\0';
-  lexer_next_token (context_p);
-
+  parser_module_handle_from_clause (context_p, &import_node);
   parser_module_add_import_node_to_context (context_p, &import_node);
   context_p->module_context_p->has_error = false;
+
 } /* parser_parse_import_statement */
 
 /**
@@ -1772,6 +1753,7 @@ parser_parse_export_statement (parser_context_t *context_p) /**< context */
 
       if (context_p->token.type != LEXER_RIGHT_BRACE)
       {
+        parser_module_free_saved_names (&export_node);
         parser_raise_error (context_p, PARSER_ERR_RIGHT_PAREN_EXPECTED);
       }
 
@@ -1828,10 +1810,8 @@ parser_parse_export_statement (parser_context_t *context_p) /**< context */
   if (context_p->token.type == LEXER_LITERAL
       && lexer_compare_raw_identifier_to_current (context_p, "from", 4))
   {
-    /* TODO: Import the requested properties from the given script and export
-             them from the current to make a redirection.
-       This part is going to be implemented in the next part of the patch. */
-    parser_raise_error (context_p, PARSER_ERR_NOT_IMPLEMENTED);
+    parser_module_handle_from_clause (context_p, &export_node);
+    parser_module_add_import_node_to_context (context_p, &export_node);
   }
 
   parser_module_add_export_node_to_context (context_p, &export_node);

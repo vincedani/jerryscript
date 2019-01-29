@@ -619,6 +619,7 @@ void parser_module_check_request_place (parser_context_t *context_p);
 void parser_module_cleanup_module_context (parser_context_t *context_p);
 void parser_module_context_init (parser_context_t *context_p);
 void parser_module_free_saved_names (parser_module_node_t *module_node_p);
+void parser_module_handle_from_clause (parser_context_t *context_p, parser_module_node_t *module_node_p);
 void parser_module_handle_requests (parser_context_t *context_p);
 void parser_module_load_modules (parser_context_t *context_p);
 void parser_module_partial_cleanup_on_error (parser_module_node_t *module_node_p);
