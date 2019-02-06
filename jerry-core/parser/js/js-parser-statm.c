@@ -1694,7 +1694,7 @@ parser_parse_import_statement (parser_context_t *context_p) /**< context */
 
       if (context_p->token.type != LEXER_RIGHT_BRACE)
       {
-        parser_module_free_saved_names (&import_node);
+        parser_module_free_saved_names (&import_node, false);
         parser_raise_error (context_p, PARSER_ERR_RIGHT_PAREN_EXPECTED);
       }
 
@@ -1718,7 +1718,7 @@ parser_parse_import_statement (parser_context_t *context_p) /**< context */
   if (context_p->token.type != LEXER_LITERAL || (context_p->token.type == LEXER_LITERAL
       && !lexer_compare_raw_identifier_to_current (context_p, "from", 4)))
   {
-    parser_module_free_saved_names (&import_node);
+    parser_module_free_saved_names (&import_node, false);
     parser_raise_error (context_p, PARSER_ERR_FROM_EXPECTED);
   }
 
@@ -1753,7 +1753,7 @@ parser_parse_export_statement (parser_context_t *context_p) /**< context */
 
       if (context_p->token.type != LEXER_RIGHT_BRACE)
       {
-        parser_module_free_saved_names (&export_node);
+        parser_module_free_saved_names (&export_node, false);
         parser_raise_error (context_p, PARSER_ERR_RIGHT_PAREN_EXPECTED);
       }
 
@@ -1811,6 +1811,7 @@ parser_parse_export_statement (parser_context_t *context_p) /**< context */
       && lexer_compare_raw_identifier_to_current (context_p, "from", 4))
   {
     parser_module_handle_from_clause (context_p, &export_node);
+    parser_module_set_redirection (&export_node, true);
     parser_module_add_import_node_to_context (context_p, &export_node);
   }
 

@@ -315,6 +315,8 @@ typedef struct parser_module_names
   prop_length_t local_name_length; /**< length of the local name */
   prop_length_t import_name_length; /**< length of the import name */
 
+  bool is_redirected_item; /**< indicates if this item is redirected */
+
   struct parser_module_names *next_p; /**< next linked list node */
 } parser_module_names_t;
 
@@ -618,13 +620,14 @@ void parser_module_add_import_node_to_context (parser_context_t *context_p, pars
 void parser_module_check_request_place (parser_context_t *context_p);
 void parser_module_cleanup_module_context (parser_context_t *context_p);
 void parser_module_context_init (parser_context_t *context_p);
-void parser_module_free_saved_names (parser_module_node_t *module_node_p);
+void parser_module_free_saved_names (parser_module_node_t *module_node_p, bool is_forced_delete);
 void parser_module_handle_from_clause (parser_context_t *context_p, parser_module_node_t *module_node_p);
 void parser_module_handle_requests (parser_context_t *context_p);
 void parser_module_load_modules (parser_context_t *context_p);
 void parser_module_partial_cleanup_on_error (parser_module_node_t *module_node_p);
 void parser_module_parse_export_item_list (parser_context_t *context_p, parser_module_node_t *module_node_p);
 void parser_module_parse_import_item_list (parser_context_t *context_p, parser_module_node_t *module_node_p);
+void parser_module_set_redirection (parser_module_node_t *module_node_p, bool is_redirected);
 
 parser_module_node_t *parser_module_create_module_node (parser_context_t *context_p,
                                                         parser_module_node_t *template_node_p);

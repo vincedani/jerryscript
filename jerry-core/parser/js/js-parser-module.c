@@ -99,7 +99,7 @@ parser_module_check_for_duplicates (parser_context_t *context_p, /**< parser con
  * Delete the saved names from the given module node.
  */
 void
-parser_module_free_saved_names (parser_module_node_t *module_node_p) /**< module node */
+parser_module_free_saved_names (parser_module_node_t *module_node_p, bool is_forced_delete) /**< module node */
 {
   JERRY_ASSERT (module_node_p != NULL);
 
@@ -113,19 +113,21 @@ parser_module_free_saved_names (parser_module_node_t *module_node_p) /**< module
   for (uint16_t i = 0; i < module_node_p->module_request_count; i++)
   {
     parser_module_names_t *next_p = current_p->next_p;
-
-    if (current_p->import_name_p != NULL)
+    if (!current_p->is_redirected_item || is_forced_delete)
     {
-      parser_free (current_p->import_name_p, current_p->import_name_length * sizeof (uint8_t));
-      current_p->import_name_p = NULL;
-    }
+      if (current_p->import_name_p != NULL)
+      {
+        parser_free (current_p->import_name_p, current_p->import_name_length * sizeof (uint8_t));
+        current_p->import_name_p = NULL;
+      }
 
-    if (current_p->local_name_p != NULL)
-    {
-      parser_free (current_p->local_name_p, current_p->local_name_length * sizeof (uint8_t));
-      current_p->local_name_p = NULL;
+      if (current_p->local_name_p != NULL)
+      {
+        parser_free (current_p->local_name_p, current_p->local_name_length * sizeof (uint8_t));
+        current_p->local_name_p = NULL;
+      }
+      parser_free (current_p, sizeof (parser_module_names_t));
     }
-    parser_free (current_p, sizeof (parser_module_names_t));
     current_p = next_p;
   }
 } /* parser_module_free_saved_names */
@@ -138,7 +140,7 @@ parser_module_partial_cleanup_on_error (parser_module_node_t *module_node_p) /**
 {
   if (module_node_p != NULL)
   {
-    parser_module_free_saved_names (module_node_p);
+    parser_module_free_saved_names (module_node_p, false);
 
     parser_free (module_node_p, sizeof (parser_module_node_t));
     module_node_p = NULL;
@@ -195,7 +197,8 @@ parser_module_add_import_node_to_context (parser_context_t *context_p, /**< pars
 
   while (stored_imports != NULL)
   {
-    if (stored_imports->script_path_p == module_node_p->script_path_p)
+    if (stored_imports->script_path_length == module_node_p->script_path_length
+        && memcmp (stored_imports->script_path_p, module_node_p->script_path_p, module_node_p->script_path_length) == 0)
     {
       parser_module_names_t *module_names_p = module_node_p->module_names_p;
       is_stored_module = true;
@@ -245,7 +248,7 @@ parser_module_add_item_to_node (parser_context_t *context_p, /**< parser context
   if (is_import_item &&
       parser_module_check_for_duplicates (context_p, module_node_p, import_name_p))
   {
-    parser_module_free_saved_names (module_node_p);
+    parser_module_free_saved_names (module_node_p, false);
     parser_raise_error (context_p, PARSER_ERR_DUPLICATED_LABEL);
   }
 
@@ -303,7 +306,7 @@ parser_module_cleanup_module_context (parser_context_t *context_p) /**< parser c
   while (current_node_p != NULL)
   {
     parser_free (current_node_p->script_path_p, current_node_p->script_path_length * sizeof (uint8_t));
-    parser_module_free_saved_names (current_node_p);
+    parser_module_free_saved_names (current_node_p, true);
 
     parser_module_node_t *next_node_p = current_node_p->next_p;
 
@@ -315,13 +318,13 @@ parser_module_cleanup_module_context (parser_context_t *context_p) /**< parser c
   if ((parent_context_p == NULL || parent_context_p->exports_p == NULL || parent_context_p->imports_p == NULL)
     && module_context_p->exports_p != NULL)
   {
-    parser_module_free_saved_names (module_context_p->exports_p);
+    parser_module_free_saved_names (module_context_p->exports_p, false);
     parser_free (module_context_p->exports_p, sizeof (parser_module_node_t));
   }
 
   if (module_context_p->has_error)
   {
-    parser_module_free_saved_names (&module_context_p->cleanup_node);
+    parser_module_free_saved_names (&module_context_p->cleanup_node, false);
   }
 
   parser_free (module_context_p, sizeof (parser_module_context_t));
@@ -431,7 +434,7 @@ parser_module_parse_export_item_list (parser_context_t *context_p, /**< parser c
       if (context_p->token.lit_location.type != LEXER_IDENT_LITERAL
           && context_p->token.lit_location.type != LEXER_STRING_LITERAL)
       {
-        parser_module_free_saved_names (module_node_p);
+        parser_module_free_saved_names (module_node_p, false);
         parser_raise_error (context_p, PARSER_ERR_PROPERTY_IDENTIFIER_EXPECTED);
       }
 
@@ -813,7 +816,7 @@ parser_module_run (const char *file_path_p, /**< file path */
   ecma_module_add_lex_env (scope_p);
   ecma_deref_object (module_obj_p);
   jerry_release_value (func_val);
-  parser_module_free_saved_names (&export_node);
+  parser_module_free_saved_names (&export_node, false);
 
   return error;
 } /* parser_module_run */
@@ -859,7 +862,7 @@ parser_module_load_modules (parser_context_t *context_p) /**< parser context */
  * Check if the import statement contains valid aliases.
  */
 static void
-parser_check_valid_aliases (parser_context_t *context_p)
+parser_module_check_valid_aliases (parser_context_t *context_p)
 {
   parser_module_node_t *imports_p = context_p->module_context_p->imports_p;
   if (imports_p == NULL)
@@ -889,7 +892,7 @@ parser_check_valid_aliases (parser_context_t *context_p)
 
     import_name_p = import_name_p->next_p;
   }
-} /* parser_check_valid_aliases */
+} /* parser_module_check_valid_aliases */
 
 /**
  * Handle import requests.
@@ -899,7 +902,7 @@ parser_check_valid_aliases (parser_context_t *context_p)
 void
 parser_module_handle_requests (parser_context_t *context_p) /**< parser context */
 {
-  parser_check_valid_aliases (context_p);
+  parser_module_check_valid_aliases (context_p);
 
   parser_module_context_t *parent_context_p = JERRY_CONTEXT (module_top_context_p);
 
@@ -946,7 +949,7 @@ parser_module_handle_requests (parser_context_t *context_p) /**< parser context 
 
     if (!request_is_found_in_module)
     {
-      parser_module_free_saved_names (context_p->module_context_p->exports_p);
+      parser_module_free_saved_names (context_p->module_context_p->exports_p, false);
       throw_error = true;
       break;
     }
@@ -977,7 +980,8 @@ parser_module_check_request_place (parser_context_t *context_p)
   }
 } /* parser_module_check_request_place */
 
-void parser_module_handle_from_clause (parser_context_t *context_p, parser_module_node_t *module_node_p)
+void
+parser_module_handle_from_clause (parser_context_t *context_p, parser_module_node_t *module_node_p)
 {
   /* Store the note temporary in case of the lexer_expect_object_literal_id throws an error. */
   context_p->module_context_p->cleanup_node = *module_node_p;
@@ -1001,4 +1005,15 @@ void parser_module_handle_from_clause (parser_context_t *context_p, parser_modul
   lexer_next_token (context_p);
 
 } /* parser_module_handle_from_clause */
+
+void
+parser_module_set_redirection (parser_module_node_t *module_node_p, bool is_redirected)
+{
+  parser_module_names_t *export_name_p = module_node_p->module_names_p;
+  for (uint16_t i = 0; i < module_node_p->module_request_count; ++i)
+  {
+    export_name_p->is_redirected_item = is_redirected;
+    export_name_p = export_name_p->next_p;
+  }
+} /* parser_module_set_redirection */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
