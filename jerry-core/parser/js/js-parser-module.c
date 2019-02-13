@@ -44,22 +44,24 @@ parser_module_check_for_duplicates_in_node (parser_module_node_t *module_node_p,
 
   while (import_names_p != NULL)
   {
-    JERRY_ASSERT (import_names_p->import_name_p != NULL);
+    uint8_t *current_p = import_names_p->import_name_p;
+    prop_length_t current_length = import_names_p->import_name_length;
 
-    lexer_literal_t *current_p = import_names_p->import_name_p;
-
-    if (current_p == import_name_p)
+    if (current_p != NULL && current_length == import_name_p->prop.length)
     {
-      return true;
+      if (memcmp (current_p, import_name_p->u.char_p, current_length) == 0)
+      {
+        return true;
+      }
     }
-
     import_names_p = import_names_p->next_p;
   }
+
   return false;
 } /* parser_module_check_for_duplicates_in_node */
 
 /**
- * Check duplicates in whole module context.
+ * Check duplicates in the whole module context.
  * @return true - if the given item is duplicated entry
  *         false - otherwise
  */
@@ -102,30 +104,27 @@ parser_module_free_saved_names (parser_module_node_t *module_node_p) /**< module
   }
 
   parser_module_names_t *current_p = module_node_p->module_names_p;
-  parser_module_names_t *next_p;
 
   for (uint16_t i = 0; i < module_node_p->module_request_count; i++)
   {
-    next_p = current_p->next_p;
+    parser_module_names_t *next_p = current_p->next_p;
+
+    if (current_p->import_name_p != NULL)
+    {
+      parser_free (current_p->import_name_p, current_p->import_name_length * sizeof (uint8_t));
+      current_p->import_name_p = NULL;
+    }
+
+    if (current_p->local_name_p != NULL)
+    {
+      parser_free (current_p->local_name_p, current_p->local_name_length * sizeof (uint8_t));
+      current_p->local_name_p = NULL;
+    }
+
     parser_free (current_p, sizeof (parser_module_names_t));
     current_p = next_p;
   }
 } /* parser_module_free_saved_names */
-
-/**
- * Cleanup module node in case of parser error.
- */
-void
-parser_module_partial_cleanup_on_error (parser_module_node_t *module_node_p) /**< module node */
-{
-  if (module_node_p != NULL)
-  {
-    parser_module_free_saved_names (module_node_p);
-
-    parser_free (module_node_p, sizeof (parser_module_node_t));
-    module_node_p = NULL;
-  }
-} /* parser_module_partial_cleanup_on_error */
 
 /**
  * Add export node to parser context.
@@ -134,7 +133,9 @@ void
 parser_module_add_export_node_to_context (parser_context_t *context_p) /**< parser context */
 {
   parser_module_node_t *module_node_p = context_p->module_current_node_p;
-  if (context_p->module_context_p->exports_p != NULL)
+  parser_module_node_t *exports_p = context_p->module_context_p->exports_p;
+
+  if (exports_p != NULL)
   {
     parser_module_names_t *module_names_p = module_node_p->module_names_p;
 
@@ -143,15 +144,14 @@ parser_module_add_export_node_to_context (parser_context_t *context_p) /**< pars
       module_names_p = module_names_p->next_p;
     }
 
-    module_names_p->next_p = context_p->module_context_p->exports_p->module_names_p;
+    module_names_p->next_p = exports_p->module_names_p;
+    exports_p->module_names_p = module_node_p->module_names_p;
 
-    context_p->module_context_p->exports_p->module_names_p = module_node_p->module_names_p;
-    int request_count =
-    context_p->module_context_p->exports_p->module_request_count + module_node_p->module_request_count;
+    int request_count = exports_p->module_request_count + module_node_p->module_request_count;
 
     if (request_count < MAX_IMPORT_COUNT)
     {
-      context_p->module_context_p->exports_p->module_request_count = (uint16_t) request_count;
+      exports_p->module_request_count = (uint16_t) request_count;
     }
     else
     {
@@ -236,8 +236,15 @@ parser_module_add_item_to_node (parser_context_t *context_p, /**< parser context
   new_names_p->next_p = module_node_p->module_names_p;
   module_node_p->module_names_p = new_names_p;
 
-  module_node_p->module_names_p->import_name_p = import_name_p;
-  module_node_p->module_names_p->local_name_p = local_name_p;
+  prop_length_t length = import_name_p->prop.length;
+  module_node_p->module_names_p->import_name_length = length;
+  module_node_p->module_names_p->import_name_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
+  memcpy (module_node_p->module_names_p->import_name_p, import_name_p->u.char_p, length);
+
+  length = local_name_p->prop.length;
+  module_node_p->module_names_p->local_name_length = length;
+  module_node_p->module_names_p->local_name_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
+  memcpy (module_node_p->module_names_p->local_name_p, local_name_p->u.char_p, length);
 
   module_node_p->module_request_count++;
 } /* parser_module_add_item_to_node */
@@ -246,7 +253,7 @@ parser_module_add_item_to_node (parser_context_t *context_p, /**< parser context
  * Cleanup the whole module context from parser context.
  */
 void
-parser_module_cleanup_module_context (parser_context_t *context_p) /**< parser context */
+parser_module_context_cleanup (parser_context_t *context_p) /**< parser context */
 {
   parser_module_context_t *module_context_p = context_p->module_context_p;
 
@@ -259,6 +266,7 @@ parser_module_cleanup_module_context (parser_context_t *context_p) /**< parser c
 
   while (current_node_p != NULL)
   {
+    parser_free (current_node_p->script_path_p, current_node_p->script_path_length * sizeof (uint8_t));
     parser_module_free_saved_names (current_node_p);
 
     parser_module_node_t *next_node_p = current_node_p->next_p;
@@ -277,7 +285,7 @@ parser_module_cleanup_module_context (parser_context_t *context_p) /**< parser c
 
   parser_free (module_context_p, sizeof (parser_module_context_t));
   context_p->module_context_p = NULL;
-} /* parser_module_cleanup_module_context */
+} /* parser_module_context_cleanup */
 
 /**
  * Create module context and bind to the parser context.
@@ -287,11 +295,10 @@ parser_module_context_init (parser_context_t *context_p) /**< parser context */
 {
   if (context_p->module_context_p == NULL)
   {
-    context_p->module_context_p =
-    (parser_module_context_t *) parser_malloc (context_p, sizeof (parser_module_context_t));
+    context_p->module_context_p = (parser_module_context_t *) parser_malloc (context_p,
+                                                                             sizeof (parser_module_context_t));
 
-    context_p->module_context_p->exports_p = NULL;
-    context_p->module_context_p->imports_p = NULL;
+    memset (context_p->module_context_p, 0, sizeof (parser_module_context_t));
   }
 } /* parser_module_context_init */
 
@@ -312,6 +319,7 @@ parser_module_create_module_node (parser_context_t *context_p, /**< parser conte
     node->module_request_count = template_node_p->module_request_count;
 
     node->script_path_p = template_node_p->script_path_p;
+    node->script_path_length = template_node_p->script_path_length;
     node->next_p = NULL;
   }
   else
@@ -515,23 +523,23 @@ parser_module_handle_requests (parser_context_t *context_p) /**< parser context 
 
   parser_module_names_t *import_name_p = module_context_p->imports_p->module_names_p;
   parser_module_names_t *current_exports_p = context_p->module_context_p->exports_p->module_names_p;
-  parser_module_names_t *export_iterator_p;
 
   for (uint16_t i = 0; i < module_context_p->imports_p->module_request_count; ++i)
   {
     bool request_is_found_in_module = false;
-    export_iterator_p = current_exports_p;
+    parser_module_names_t *export_iterator_p = current_exports_p;
 
     for (uint16_t j = 0; j < context_p->module_context_p->exports_p->module_request_count;
          ++j, export_iterator_p = export_iterator_p->next_p)
     {
-      lexer_literal_t *current_local_name_p = import_name_p->local_name_p;
-      lexer_literal_t *current_import_name_p = export_iterator_p->import_name_p;
+      if (import_name_p->local_name_length != export_iterator_p->import_name_length)
+      {
+        continue;
+      }
 
-      if (current_local_name_p->prop.length == current_import_name_p->prop.length
-          && memcmp (current_local_name_p->u.char_p,
-                     current_import_name_p->u.char_p,
-                     current_local_name_p->prop.length) == 0)
+      if (memcmp (import_name_p->local_name_p,
+                     export_iterator_p->import_name_p,
+                     import_name_p->local_name_length) == 0)
       {
         request_is_found_in_module = true;
         break;
@@ -570,4 +578,27 @@ parser_module_check_request_place (parser_context_t *context_p)
     parser_raise_error (context_p, PARSER_ERR_MODULE_UNEXPECTED);
   }
 } /* parser_module_check_request_place */
+
+void
+parser_module_handle_from_clause (parser_context_t *context_p)
+{
+  parser_module_node_t *module_node_p = context_p->module_current_node_p;
+  lexer_expect_object_literal_id (context_p, LEXER_OBJ_IDENT_NO_OPTS);
+
+  if (context_p->lit_object.literal_p->prop.length == 0)
+  {
+    parser_raise_error (context_p, PARSER_ERR_PROPERTY_IDENTIFIER_EXPECTED);
+  }
+
+  module_node_p->script_path_length = (prop_length_t)(context_p->lit_object.literal_p->prop.length + 1);
+  module_node_p->script_path_p = (uint8_t *) parser_malloc (context_p,
+                                                            module_node_p->script_path_length * sizeof (uint8_t));
+
+  memcpy (module_node_p->script_path_p,
+          context_p->lit_object.literal_p->u.char_p,
+          module_node_p->script_path_length);
+  module_node_p->script_path_p[module_node_p->script_path_length - 1] = '\0';
+
+  lexer_next_token (context_p);
+} /* parser_module_handle_from_clause */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */

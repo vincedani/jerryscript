@@ -1735,17 +1735,9 @@ parser_parse_import_statement (parser_context_t *context_p) /**< context */
     parser_raise_error (context_p, PARSER_ERR_FROM_EXPECTED);
   }
 
-  lexer_expect_object_literal_id (context_p, LEXER_OBJ_IDENT_NO_OPTS);
-
-  if (context_p->lit_object.literal_p->prop.length == 0)
-  {
-    parser_raise_error (context_p, PARSER_ERR_PROPERTY_IDENTIFIER_EXPECTED);
-  }
-
-  module_node.script_path_p = context_p->lit_object.literal_p;
-  lexer_next_token (context_p);
-
+  parser_module_handle_from_clause (context_p);
   parser_module_add_import_node_to_context (context_p);
+
   context_p->module_current_node_p = NULL;
 } /* parser_parse_import_statement */
 

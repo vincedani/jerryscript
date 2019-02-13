@@ -303,14 +303,17 @@ typedef struct
  *  exported name: v
  *  imported name: x
  * export x as v;
- *  exported variable: v
- *  exported as: x
+ *  exported variable: x
+ *  exported as: v
  * Reference: https://www.ecma-international.org/ecma-262/6.0/#table-41
  */
 typedef struct parser_module_names
 {
-  lexer_literal_t *local_name_p; /**< local name of the import item */
-  lexer_literal_t *import_name_p; /**< import name of the import item */
+  uint8_t *local_name_p; /**< local name of the import item */
+  uint8_t *import_name_p; /**< import name of the import item */
+
+  prop_length_t local_name_length; /**< length of the local name */
+  prop_length_t import_name_length; /**< length of the import name */
 
   struct parser_module_names *next_p; /**< next linked list node */
 } parser_module_names_t;
@@ -325,7 +328,8 @@ typedef struct parser_module_node
   parser_module_names_t *module_names_p; /**< names of the requested imports - exports */
   uint16_t module_request_count; /**< count of the requested imports - exports */
 
-  lexer_literal_t *script_path_p; /**< path of the requested module*/
+  uint8_t *script_path_p; /**< path of the requested module*/
+  prop_length_t script_path_length; /**< length of the script path */
 
   struct parser_module_node *next_p; /**< next linked list node */
 } parser_module_node_t;
@@ -610,9 +614,10 @@ void parser_free_jumps (parser_stack_iterator_t iterator);
 void parser_module_add_export_node_to_context (parser_context_t *context_p);
 void parser_module_add_import_node_to_context (parser_context_t *context_p);
 void parser_module_check_request_place (parser_context_t *context_p);
-void parser_module_cleanup_module_context (parser_context_t *context_p);
+void parser_module_context_cleanup (parser_context_t *context_p);
 void parser_module_context_init (parser_context_t *context_p);
 void parser_module_free_saved_names (parser_module_node_t *module_node_p);
+void parser_module_handle_from_clause (parser_context_t *context_p);
 void parser_module_handle_requests (parser_context_t *context_p);
 void parser_module_partial_cleanup_on_error (parser_module_node_t *module_node_p);
 void parser_module_parse_export_item_list (parser_context_t *context_p);

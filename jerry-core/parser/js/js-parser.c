@@ -2343,7 +2343,7 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
                      parser_error_location_t *error_location_p) /**< error location */
 {
   parser_context_t context;
-  ecma_compiled_code_t *compiled_code;
+  ecma_compiled_code_t *compiled_code_p;
 
   context.error = PARSER_ERR_NO_ERROR;
   context.allocated_buffer_p = NULL;
@@ -2469,7 +2469,7 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
     }
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
-    compiled_code = parser_post_processing (&context);
+    compiled_code_p = parser_post_processing (&context);
     parser_list_free (&context.literal_pool);
 
 #ifdef PARSER_DUMP_BYTE_CODE
@@ -2502,7 +2502,7 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
       error_location_p->column = context.token.column;
     }
 
-    compiled_code = NULL;
+    compiled_code_p = NULL;
     parser_free_literals (&context.literal_pool);
     parser_cbc_stream_free (&context.byte_code);
   }
@@ -2518,11 +2518,11 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
 #endif /* PARSER_DUMP_BYTE_CODE */
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
-  parser_module_cleanup_module_context (&context);
+  parser_module_context_cleanup (&context);
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
   parser_stack_free (&context);
 
-  return compiled_code;
+  return compiled_code_p;
 } /* parser_parse_source */
 
 /**
