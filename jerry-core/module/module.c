@@ -96,8 +96,11 @@ parser_module_compare_property_name_with_import (parser_module_node_t *module_no
   return NULL;
 } /* parser_module_compare_property_name_with_import */
 
+/**
+ * Connect the imported script's propeties to the main script.
+ */
 static void
-module_connect_properties (ecma_object_t *scope_p) /** byte code */
+module_connect_properties (ecma_object_t *scope_p) /** scope */
 {
   parser_module_context_t *module_context_p = JERRY_CONTEXT (module_top_context_p);
 
