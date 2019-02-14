@@ -298,7 +298,7 @@ typedef struct
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
 /**
- * String sturct for storing the module name.
+ * String struct for storing the module name.
  */
 typedef struct parser_module_utf8_string
 {
