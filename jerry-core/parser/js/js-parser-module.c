@@ -602,9 +602,9 @@ parser_module_handle_from_clause (parser_context_t *context_p) /**< parser conte
     parser_raise_error (context_p, PARSER_ERR_PROPERTY_IDENTIFIER_EXPECTED);
   }
 
-  module_node_p->script_path.length = (prop_length_t)(context_p->lit_object.literal_p->prop.length + 1);
+  module_node_p->script_path.length = (prop_length_t) (context_p->lit_object.literal_p->prop.length + 1);
   module_node_p->script_path.value_p = (uint8_t *) parser_malloc (context_p,
-                                                            module_node_p->script_path.length * sizeof (uint8_t));
+                                                                  module_node_p->script_path.length * sizeof (uint8_t));
 
   memcpy (module_node_p->script_path.value_p,
           context_p->lit_object.literal_p->u.char_p,

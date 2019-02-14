@@ -117,7 +117,7 @@ struct jerry_context_t
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
   ecma_module_lex_envs_t *ecma_module_lex_envs_p; /**< list of module's lexical environments */
-  parser_module_context_t *module_top_context_p; /**< module context */
+  parser_module_context_t *module_top_context_p; /**< top (current) module parser context */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
   vm_frame_ctx_t *vm_top_context_p; /**< top (current) interpreter context */

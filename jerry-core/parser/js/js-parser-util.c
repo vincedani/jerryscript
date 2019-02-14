@@ -1092,7 +1092,7 @@ parser_error_to_string (parser_error_t error) /**< error code */
     }
     case PARSER_ERR_STRING_EXPECTED:
     {
-      return "Expected string token.";
+      return "Expected a string.";
     }
     case PARSER_ERR_MODULE_REQUEST_LIMIT_REACHED:
     {
@@ -1100,7 +1100,7 @@ parser_error_to_string (parser_error_t error) /**< error code */
     }
     case PARSER_ERR_MODULE_UNEXPECTED:
     {
-      return "Import and export statement must be in the global context.";
+      return "Import and export statements must be in the global context.";
     }
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 

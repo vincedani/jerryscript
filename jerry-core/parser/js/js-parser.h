@@ -131,7 +131,6 @@ typedef enum
   PARSER_ERR_REST_PARAMETER_DEFAULT_INITIALIZER,      /**< rest parameter default initializer */
 #endif /* !CONFIG_DISABLE_ES2015_FUNCTION_REST_PARAMETER */
   PARSER_ERR_OBJECT_PROPERTY_REDEFINED,               /**< property of object literal redefined */
-  PARSER_ERR_NON_STRICT_ARG_DEFINITION,               /**< non-strict argument definition */
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
   PARSER_ERR_RIGHT_PAREN_COMMA_FROM_EXPECTED,         /**< rigth paren or comma or from expected */
@@ -143,6 +142,8 @@ typedef enum
   PARSER_ERR_MODULE_REQUEST_LIMIT_REACHED,            /**< maximum number of requests reached */
   PARSER_ERR_MODULE_UNEXPECTED,                       /**< unexpected import or export statement */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
+
+  PARSER_ERR_NON_STRICT_ARG_DEFINITION               /**< non-strict argument definition */
 } parser_error_t;
 
 /**
