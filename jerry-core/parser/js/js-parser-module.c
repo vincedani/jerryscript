@@ -28,7 +28,11 @@
 #include "module.h"
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
-#define MAX_IMPORT_COUNT 65535
+/**
+ * Maximum import count limit.
+ */
+#define MAX_IMPORT_COUNT UINT16_MAX
+
 /**
  * Check duplicates in module node.
  * @return true - if the given item is duplicated entry in the current node
@@ -44,8 +48,8 @@ parser_module_check_for_duplicates_in_node (parser_module_node_t *module_node_p,
 
   while (import_names_p != NULL)
   {
-    uint8_t *current_p = import_names_p->import_name_p;
-    prop_length_t current_length = import_names_p->import_name_length;
+    uint8_t *current_p = import_names_p->import_name.value_p;
+    prop_length_t current_length = import_names_p->import_name.length;
 
     if (current_p != NULL && current_length == import_name_p->prop.length)
     {
@@ -109,16 +113,16 @@ parser_module_free_saved_names (parser_module_node_t *module_node_p) /**< module
   {
     parser_module_names_t *next_p = current_p->next_p;
 
-    if (current_p->import_name_p != NULL)
+    if (current_p->import_name.value_p != NULL)
     {
-      parser_free (current_p->import_name_p, current_p->import_name_length * sizeof (uint8_t));
-      current_p->import_name_p = NULL;
+      parser_free (current_p->import_name.value_p, current_p->import_name.length * sizeof (uint8_t));
+      current_p->import_name.value_p = NULL;
     }
 
-    if (current_p->local_name_p != NULL)
+    if (current_p->local_name.value_p != NULL)
     {
-      parser_free (current_p->local_name_p, current_p->local_name_length * sizeof (uint8_t));
-      current_p->local_name_p = NULL;
+      parser_free (current_p->local_name.value_p, current_p->local_name.length * sizeof (uint8_t));
+      current_p->local_name.value_p = NULL;
     }
 
     parser_free (current_p, sizeof (parser_module_names_t));
@@ -177,8 +181,13 @@ parser_module_add_import_node_to_context (parser_context_t *context_p) /**< pars
 
   while (stored_imports != NULL)
   {
-    if (stored_imports->script_path_p == module_node_p->script_path_p)
+    if (stored_imports->script_path.length == module_node_p->script_path.length
+       && memcmp (stored_imports->script_path.value_p,
+                  module_node_p->script_path.value_p,
+                  stored_imports->script_path.length) == 0)
     {
+      parser_free (module_node_p->script_path.value_p, module_node_p->script_path.length * sizeof (uint8_t));
+
       parser_module_names_t *module_names_p = module_node_p->module_names_p;
       is_stored_module = true;
 
@@ -188,7 +197,7 @@ parser_module_add_import_node_to_context (parser_context_t *context_p) /**< pars
       }
 
       module_names_p->next_p = stored_imports->module_names_p;
-      stored_imports->module_names_p = module_names_p;
+      stored_imports->module_names_p = module_node_p->module_names_p;
 
       int request_count = stored_imports->module_request_count + module_node_p->module_request_count;
       if (request_count < MAX_IMPORT_COUNT)
@@ -237,14 +246,14 @@ parser_module_add_item_to_node (parser_context_t *context_p, /**< parser context
   module_node_p->module_names_p = new_names_p;
 
   prop_length_t length = import_name_p->prop.length;
-  module_node_p->module_names_p->import_name_length = length;
-  module_node_p->module_names_p->import_name_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
-  memcpy (module_node_p->module_names_p->import_name_p, import_name_p->u.char_p, length);
+  module_node_p->module_names_p->import_name.length = length;
+  module_node_p->module_names_p->import_name.value_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
+  memcpy (module_node_p->module_names_p->import_name.value_p, import_name_p->u.char_p, length);
 
   length = local_name_p->prop.length;
-  module_node_p->module_names_p->local_name_length = length;
-  module_node_p->module_names_p->local_name_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
-  memcpy (module_node_p->module_names_p->local_name_p, local_name_p->u.char_p, length);
+  module_node_p->module_names_p->local_name.length = length;
+  module_node_p->module_names_p->local_name.value_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
+  memcpy (module_node_p->module_names_p->local_name.value_p, local_name_p->u.char_p, length);
 
   module_node_p->module_request_count++;
 } /* parser_module_add_item_to_node */
@@ -266,7 +275,7 @@ parser_module_context_cleanup (parser_context_t *context_p) /**< parser context 
 
   while (current_node_p != NULL)
   {
-    parser_free (current_node_p->script_path_p, current_node_p->script_path_length * sizeof (uint8_t));
+    parser_free (current_node_p->script_path.value_p, current_node_p->script_path.length * sizeof (uint8_t));
     parser_module_free_saved_names (current_node_p);
 
     parser_module_node_t *next_node_p = current_node_p->next_p;
@@ -318,8 +327,8 @@ parser_module_create_module_node (parser_context_t *context_p, /**< parser conte
     node->module_names_p = template_node_p->module_names_p;
     node->module_request_count = template_node_p->module_request_count;
 
-    node->script_path_p = template_node_p->script_path_p;
-    node->script_path_length = template_node_p->script_path_length;
+    node->script_path.value_p = template_node_p->script_path.value_p;
+    node->script_path.length = template_node_p->script_path.length;
     node->next_p = NULL;
   }
   else
@@ -373,8 +382,8 @@ parser_module_parse_export_item_list (parser_context_t *context_p) /**< parser c
     if (has_export_name
         && context_p->token.type != LEXER_KEYW_DEFAULT
         && (context_p->token.type != LEXER_LITERAL
-          || lexer_compare_raw_identifier_to_current (context_p, "from", 4)
-          || lexer_compare_raw_identifier_to_current (context_p, "as", 2)))
+            || lexer_compare_raw_identifier_to_current (context_p, "from", 4)
+            || lexer_compare_raw_identifier_to_current (context_p, "as", 2)))
     {
       parser_raise_error (context_p, PARSER_ERR_INVALID_CHARACTER);
     }
@@ -532,14 +541,14 @@ parser_module_handle_requests (parser_context_t *context_p) /**< parser context 
     for (uint16_t j = 0; j < context_p->module_context_p->exports_p->module_request_count;
          ++j, export_iterator_p = export_iterator_p->next_p)
     {
-      if (import_name_p->local_name_length != export_iterator_p->import_name_length)
+      if (import_name_p->local_name.length != export_iterator_p->import_name.length)
       {
         continue;
       }
 
-      if (memcmp (import_name_p->local_name_p,
-                     export_iterator_p->import_name_p,
-                     import_name_p->local_name_length) == 0)
+      if (memcmp (import_name_p->local_name.value_p,
+                  export_iterator_p->import_name.value_p,
+                  import_name_p->local_name.length) == 0)
       {
         request_is_found_in_module = true;
         break;
@@ -569,7 +578,7 @@ parser_module_handle_requests (parser_context_t *context_p) /**< parser context 
  * Raises parser error if the import or export statement is not in the global scope.
  */
 void
-parser_module_check_request_place (parser_context_t *context_p)
+parser_module_check_request_place (parser_context_t *context_p) /**< parser context */
 {
   if (context_p->last_context_p != NULL
       || context_p->stack_top_uint8 != 0
@@ -579,8 +588,11 @@ parser_module_check_request_place (parser_context_t *context_p)
   }
 } /* parser_module_check_request_place */
 
+/**
+ * Handle from clause at the end of the import / export statement.
+ */
 void
-parser_module_handle_from_clause (parser_context_t *context_p)
+parser_module_handle_from_clause (parser_context_t *context_p) /**< parser context */
 {
   parser_module_node_t *module_node_p = context_p->module_current_node_p;
   lexer_expect_object_literal_id (context_p, LEXER_OBJ_IDENT_NO_OPTS);
@@ -590,14 +602,14 @@ parser_module_handle_from_clause (parser_context_t *context_p)
     parser_raise_error (context_p, PARSER_ERR_PROPERTY_IDENTIFIER_EXPECTED);
   }
 
-  module_node_p->script_path_length = (prop_length_t)(context_p->lit_object.literal_p->prop.length + 1);
-  module_node_p->script_path_p = (uint8_t *) parser_malloc (context_p,
-                                                            module_node_p->script_path_length * sizeof (uint8_t));
+  module_node_p->script_path.length = (prop_length_t)(context_p->lit_object.literal_p->prop.length + 1);
+  module_node_p->script_path.value_p = (uint8_t *) parser_malloc (context_p,
+                                                            module_node_p->script_path.length * sizeof (uint8_t));
 
-  memcpy (module_node_p->script_path_p,
+  memcpy (module_node_p->script_path.value_p,
           context_p->lit_object.literal_p->u.char_p,
-          module_node_p->script_path_length);
-  module_node_p->script_path_p[module_node_p->script_path_length - 1] = '\0';
+          module_node_p->script_path.length);
+  module_node_p->script_path.value_p[module_node_p->script_path.length - 1] = '\0';
 
   lexer_next_token (context_p);
 } /* parser_module_handle_from_clause */

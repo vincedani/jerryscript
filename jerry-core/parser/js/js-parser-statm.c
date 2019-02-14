@@ -71,11 +71,6 @@ typedef enum
   PARSER_STATEMENT_FOR_IN,
   PARSER_STATEMENT_WITH,
   PARSER_STATEMENT_TRY,
-
-#ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
-  PARSER_STATEMENT_IMPORT,
-#endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
-
 } parser_statement_type_t;
 
 /**
@@ -311,7 +306,6 @@ parser_parse_enclosed_expr (parser_context_t *context_p) /**< context */
 
 /**
  * Parse var statement.
- * @return the name of the variable
  */
 static void
 parser_parse_var_statement (parser_context_t *context_p) /**< context */
@@ -379,7 +373,6 @@ parser_parse_var_statement (parser_context_t *context_p) /**< context */
 
 /**
  * Parse function statement.
- * @return the name of the function
  */
 static void
 parser_parse_function_statement (parser_context_t *context_p) /**< context */

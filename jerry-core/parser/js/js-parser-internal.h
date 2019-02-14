@@ -298,6 +298,15 @@ typedef struct
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
 /**
+ * String sturct for storing the module name.
+ */
+typedef struct parser_module_utf8_string
+{
+  uint8_t *value_p;     /**< string value stored as uint8_t */
+  prop_length_t length; /**< length of the string */
+} parser_module_utf8_string_t;
+
+/**
  * Imported or exported names, for example:
  * import { v as x } from "module";
  *  exported name: v
@@ -309,11 +318,8 @@ typedef struct
  */
 typedef struct parser_module_names
 {
-  uint8_t *local_name_p; /**< local name of the import item */
-  uint8_t *import_name_p; /**< import name of the import item */
-
-  prop_length_t local_name_length; /**< length of the local name */
-  prop_length_t import_name_length; /**< length of the import name */
+  parser_module_utf8_string_t import_name; /**< local name of the import item */
+  parser_module_utf8_string_t local_name;  /**< import name of the import item */
 
   struct parser_module_names *next_p; /**< next linked list node */
 } parser_module_names_t;
@@ -326,10 +332,9 @@ typedef struct parser_module_names
 typedef struct parser_module_node
 {
   parser_module_names_t *module_names_p; /**< names of the requested imports - exports */
-  uint16_t module_request_count; /**< count of the requested imports - exports */
+  uint16_t module_request_count;         /**< count of the requested imports - exports */
 
-  uint8_t *script_path_p; /**< path of the requested module*/
-  prop_length_t script_path_length; /**< length of the script path */
+  parser_module_utf8_string_t script_path; /**< path of the requested module*/
 
   struct parser_module_node *next_p; /**< next linked list node */
 } parser_module_node_t;
