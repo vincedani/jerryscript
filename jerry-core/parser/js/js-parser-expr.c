@@ -568,6 +568,17 @@ parser_parse_class (parser_context_t *context_p, /**< context */
 
     class_ident_index = context_p->lit_object.index;
     context_p->lit_object.literal_p->status_flags |= LEXER_FLAG_VAR;
+
+#ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
+    if (context_p->module_context_p != NULL && context_p->module_current_node_p != NULL)
+    {
+      parser_module_add_item_to_node (context_p,
+                                      context_p->lit_object.literal_p,
+                                      context_p->lit_object.literal_p,
+                                      false);
+    }
+#endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
+
     lexer_next_token (context_p);
   }
   else

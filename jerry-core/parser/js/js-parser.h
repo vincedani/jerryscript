@@ -141,6 +141,8 @@ typedef enum
   PARSER_ERR_NOT_IMPLEMENTED,                         /**< feature not implemented yet */
   PARSER_ERR_MODULE_REQUEST_LIMIT_REACHED,            /**< maximum number of requests reached */
   PARSER_ERR_MODULE_UNEXPECTED,                       /**< unexpected import or export statement */
+  PARSER_ERR_INVALID_ALIASES,                         /**< invalid aliases in the import statement */
+  PARSER_ERR_DUPLICATED_DEFAULT_ITEM,                 /**< duplicated default item */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
   PARSER_ERR_NON_STRICT_ARG_DEFINITION               /**< non-strict argument definition */

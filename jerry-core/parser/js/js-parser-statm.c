@@ -328,7 +328,6 @@ parser_parse_var_statement (parser_context_t *context_p) /**< context */
     if (context_p->module_context_p != NULL && context_p->module_current_node_p != NULL)
     {
       parser_module_add_item_to_node (context_p,
-                                      context_p->module_current_node_p,
                                       context_p->lit_object.literal_p,
                                       context_p->lit_object.literal_p,
                                       false);
@@ -403,11 +402,7 @@ parser_parse_function_statement (parser_context_t *context_p) /**< context */
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
   if (context_p->module_context_p != NULL && context_p->module_current_node_p != NULL)
   {
-    parser_module_add_item_to_node (context_p,
-                                    context_p->module_current_node_p,
-                                    name_p,
-                                    name_p,
-                                    false);
+    parser_module_add_item_to_node (context_p, name_p, name_p, false);
   }
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
@@ -1680,7 +1675,7 @@ parser_parse_continue_statement (parser_context_t *context_p) /**< context */
  * Parse import statement.
  */
 static void
-parser_parse_import_statement (parser_context_t *context_p) /**< context */
+parser_parse_import_statement (parser_context_t *context_p) /**< parser context */
 {
   JERRY_ASSERT (context_p->token.type == LEXER_KEYW_IMPORT);
 
@@ -1695,22 +1690,14 @@ parser_parse_import_statement (parser_context_t *context_p) /**< context */
 
   switch (context_p->token.type)
   {
-    case LEXER_LEFT_BRACE:
+    case LEXER_LITERAL:
     {
-      lexer_next_token (context_p);
-      parser_module_parse_import_item_list (context_p);
-
-      if (context_p->token.type != LEXER_RIGHT_BRACE)
-      {
-        parser_raise_error (context_p, PARSER_ERR_RIGHT_PAREN_EXPECTED);
-      }
-
-      lexer_next_token (context_p);
-      break;
+      parser_module_set_default (context_p);
+      /* FALLTHRU */
     }
 
+    case LEXER_LEFT_BRACE:
     case LEXER_MULTIPLY:
-    case LEXER_LITERAL:
     {
       parser_module_parse_import_item_list (context_p);
       break;
@@ -1749,12 +1736,15 @@ parser_parse_export_statement (parser_context_t *context_p) /**< context */
   memset (&module_node, 0, sizeof (parser_module_node_t));
   context_p->module_current_node_p = &module_node;
 
+  default_keyword_found:
   lexer_next_token (context_p);
 
   switch (context_p->token.type)
   {
     case LEXER_LEFT_BRACE:
     {
+      JERRY_ASSERT (!context_p->module_processing_default_item);
+
       lexer_next_token (context_p);
       parser_module_parse_export_item_list (context_p);
 
@@ -1767,14 +1757,21 @@ parser_parse_export_statement (parser_context_t *context_p) /**< context */
       break;
     }
 
-    case LEXER_KEYW_DEFAULT:
+    case LEXER_MULTIPLY:
     {
+      JERRY_ASSERT (!context_p->module_processing_default_item);
+
       /* TODO: This part is going to be implemented in the next part of the patch. */
       parser_raise_error (context_p, PARSER_ERR_NOT_IMPLEMENTED);
       break;
     }
 
-    case LEXER_MULTIPLY:
+    case LEXER_KEYW_DEFAULT:
+    {
+      parser_module_set_default (context_p);
+      goto default_keyword_found;
+    }
+
     case LEXER_LITERAL:
     {
       parser_module_parse_export_item_list (context_p);
@@ -1795,8 +1792,7 @@ parser_parse_export_statement (parser_context_t *context_p) /**< context */
 
     case LEXER_KEYW_CLASS:
     {
-      /* TODO: This part is going to be implemented in the next part of the patch. */
-      parser_raise_error (context_p, PARSER_ERR_NOT_IMPLEMENTED);
+      parser_parse_class (context_p, true);
       break;
     }
 
@@ -1810,10 +1806,9 @@ parser_parse_export_statement (parser_context_t *context_p) /**< context */
   if (context_p->token.type == LEXER_LITERAL
       && lexer_compare_raw_identifier_to_current (context_p, "from", 4))
   {
-    /* TODO: Import the requested properties from the given script and export
-             them from the current to make a redirection.
-       This part is going to be implemented in the next part of the patch. */
-    parser_raise_error (context_p, PARSER_ERR_NOT_IMPLEMENTED);
+    parser_module_handle_from_clause (context_p);
+    parser_module_set_redirection (context_p, true);
+    parser_module_add_import_node_to_context (context_p);
   }
 
   parser_module_add_export_node_to_context (context_p);

@@ -318,22 +318,25 @@ typedef struct parser_module_utf8_string
  */
 typedef struct parser_module_names
 {
-  parser_module_utf8_string_t import_name; /**< local name of the import item */
-  parser_module_utf8_string_t local_name;  /**< import name of the import item */
+  parser_module_utf8_string_t import_name; /**< local name of the import - export item */
+  parser_module_utf8_string_t local_name;  /**< import name of the import - export item */
+
+  // TODO: Maybe these boolean values can be converted into flags in a dedicated variable?!
+  bool is_redirected_item; /**< indicates if this item is redirected */
+  bool is_default_item;    /**< indicates if this item is the default one */
 
   struct parser_module_names *next_p; /**< next linked list node */
 } parser_module_names_t;
 
 /**
  * Module node to store imports / exports.
- * Contains the reference to the imported / exported object names and the path of the
- * script that includes these objects.
  */
 typedef struct parser_module_node
 {
   parser_module_names_t *module_names_p; /**< names of the requested imports - exports */
   uint16_t module_request_count;         /**< count of the requested imports - exports */
 
+  bool is_import_for_side_effect;          /**< just run the requested module */
   parser_module_utf8_string_t script_path; /**< path of the requested module*/
 
   struct parser_module_node *next_p; /**< next linked list node */
@@ -398,8 +401,9 @@ typedef struct
   parser_stack_iterator_t last_statement;     /**< last statement position */
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
-  parser_module_context_t *module_context_p;  /**< shared module context inside the parser */
+  parser_module_context_t *module_context_p;   /**< shared module context inside the parser */
   parser_module_node_t *module_current_node_p; /**< import / export node that is being processed */
+  bool module_processing_default_item;         /**< is the current import / export is the default one */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
   /* Lexer members. */
@@ -621,19 +625,22 @@ void parser_module_add_import_node_to_context (parser_context_t *context_p);
 void parser_module_check_request_place (parser_context_t *context_p);
 void parser_module_context_cleanup (parser_context_t *context_p);
 void parser_module_context_init (parser_context_t *context_p);
-void parser_module_free_saved_names (parser_module_node_t *module_node_p);
+void parser_module_free_saved_names (parser_module_node_t *module_node_p, bool is_forced_delete);
 void parser_module_handle_from_clause (parser_context_t *context_p);
 void parser_module_handle_requests (parser_context_t *context_p);
 void parser_module_partial_cleanup_on_error (parser_module_node_t *module_node_p);
 void parser_module_parse_export_item_list (parser_context_t *context_p);
 void parser_module_parse_import_item_list (parser_context_t *context_p);
+void parser_module_set_default (parser_context_t *context_p);
+void parser_module_set_redirection (parser_context_t *context_p, bool is_redirected);
+bool parser_module_is_whole_module_requested (parser_module_node_t *module_node_p,
+                                              parser_module_names_t *eventual_names_p);
 
 parser_module_node_t *parser_module_create_module_node (parser_context_t *context_p,
                                                         parser_module_node_t *template_node_p);
 parser_module_node_t *parser_module_get_export_node (parser_context_t *context_p);
 
 void parser_module_add_item_to_node (parser_context_t *context_p,
-                                     parser_module_node_t *module_node_p,
                                      lexer_literal_t *import_name_p,
                                      lexer_literal_t *local_name_p,
                                      bool is_import_item);

@@ -13,23 +13,16 @@
  * limitations under the License.
  */
 
-import { b, c, d, e, f as g } from "tests/jerry/es2015/module-imported.js"
+var a = 1;
 
-import
-{
-  b as pi,
-  getString,
-  getArea
-} from "tests/jerry/es2015/module-imported-2.js"
+function b () {
+  return 2;
+}
 
-var str = "str";
+export default function d () {
+  return 4;
+}
 
-assert (b () === 2);
-assert (c === 3);
-assert (d () === 4);
-assert (e === 1);
-assert (g === str);
+export { a as e, b }
 
-assert (pi === 3.14);
-assert (getArea (2) == 12.56);
-assert (getString (str) === "strString")
+assert (true);

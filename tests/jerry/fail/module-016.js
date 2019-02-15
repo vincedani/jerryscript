@@ -13,4 +13,4 @@
  * limitations under the License.
  */
 
-eval ("import { c } from 'tests/jerry/es2015/module-imported.js';");
+eval ("import { c } from 'tests/jerry/es2015/module-imported-01.js';");

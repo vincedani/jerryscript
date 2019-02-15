@@ -13,4 +13,4 @@
  * limitations under the License.
  */
 
-import { c as a, d as a } from "tests/jerry/es2015/module-imported.js";
+import { c as a, d as a } from "tests/jerry/es2015/module-imported-01.js";

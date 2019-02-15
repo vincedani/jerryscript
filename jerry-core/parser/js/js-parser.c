@@ -2851,7 +2851,7 @@ parser_raise_error (parser_context_t *context_p, /**< context */
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
   if (context_p->module_context_p != NULL)
   {
-    parser_module_free_saved_names (context_p->module_current_node_p);
+    parser_module_free_saved_names (context_p->module_current_node_p, true);
   }
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
