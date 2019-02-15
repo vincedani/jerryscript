@@ -100,8 +100,11 @@ parser_module_compare_property_name_with_import (parser_module_node_t *module_no
  * Connect the imported script's properties to the main script.
  */
 static void
-module_connect_properties (ecma_object_t *scope_p) /** scope */
+module_connect_properties (ecma_object_t *scope_p) /** scope_p */
 {
+  JERRY_ASSERT (ecma_is_lexical_environment (scope_p));
+  JERRY_ASSERT (ecma_get_lex_env_type (scope_p) == ECMA_LEXICAL_ENVIRONMENT_DECLARATIVE);
+
   parser_module_context_t *module_context_p = JERRY_CONTEXT (module_top_context_p);
 
   if (module_context_p == NULL || module_context_p->exports_p == NULL || module_context_p->imports_p == NULL)

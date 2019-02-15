@@ -318,16 +318,14 @@ typedef struct parser_module_utf8_string
  */
 typedef struct parser_module_names
 {
-  parser_module_utf8_string_t import_name; /**< local name of the import item */
-  parser_module_utf8_string_t local_name;  /**< import name of the import item */
+  parser_module_utf8_string_t import_name; /**< local name of the import - export item */
+  parser_module_utf8_string_t local_name;  /**< import name of the import - export item */
 
   struct parser_module_names *next_p; /**< next linked list node */
 } parser_module_names_t;
 
 /**
  * Module node to store imports / exports.
- * Contains the reference to the imported / exported object names and the path of the
- * script that includes these objects.
  */
 typedef struct parser_module_node
 {
