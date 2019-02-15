@@ -145,7 +145,6 @@ module_connect_properties (ecma_object_t *scope_p) /** scope */
         ecma_string_t *new_property_name_p = ecma_new_ecma_string_from_utf8 (new_name_p->import_name.value_p,
                                                                              new_name_p->import_name.length);
 
-        // TODO: Check if the global object is extensible.
         ecma_create_named_data_property (global_obj_p,
                                          new_property_name_p,
                                          ECMA_PROPERTY_NOT_WRITABLE,
