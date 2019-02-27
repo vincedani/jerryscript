@@ -48,8 +48,9 @@ parser_module_check_for_duplicates_in_node (parser_module_node_t *module_node_p,
 
   while (import_names_p != NULL)
   {
-    uint8_t *current_p = import_names_p->import_name.value_p;
-    prop_length_t current_length = import_names_p->import_name.length;
+    uint8_t flags = ECMA_STRING_FLAG_IS_ASCII;
+    lit_utf8_size_t current_length = 0;
+    const uint8_t *current_p = ecma_string_get_chars (import_names_p->import_name_p, &current_length, &flags);
 
     if (current_p != NULL && current_length == import_name_p->prop.length)
     {
@@ -113,16 +114,16 @@ parser_module_free_saved_names (parser_module_node_t *module_node_p) /**< module
   {
     parser_module_names_t *next_p = current_p->next_p;
 
-    if (current_p->import_name.value_p != NULL)
+    if (current_p->import_name_p != NULL)
     {
-      parser_free (current_p->import_name.value_p, current_p->import_name.length * sizeof (uint8_t));
-      current_p->import_name.value_p = NULL;
+      ecma_deref_ecma_string (current_p->import_name_p);
+      current_p->import_name_p = NULL;
     }
 
-    if (current_p->local_name.value_p != NULL)
+    if (current_p->local_name_p != NULL)
     {
-      parser_free (current_p->local_name.value_p, current_p->local_name.length * sizeof (uint8_t));
-      current_p->local_name.value_p = NULL;
+      ecma_deref_ecma_string (current_p->local_name_p);
+      current_p->local_name_p = NULL;
     }
 
     parser_free (current_p, sizeof (parser_module_names_t));
@@ -239,21 +240,17 @@ parser_module_add_item_to_node (parser_context_t *context_p, /**< parser context
     parser_raise_error (context_p, PARSER_ERR_DUPLICATED_LABEL);
   }
 
-  parser_module_names_t *new_names_p =
-  (parser_module_names_t *) parser_malloc (context_p, sizeof (parser_module_names_t));
+  parser_module_names_t *new_names_p = (parser_module_names_t *) parser_malloc (context_p,
+                                                                                sizeof (parser_module_names_t));
 
   new_names_p->next_p = module_node_p->module_names_p;
   module_node_p->module_names_p = new_names_p;
 
-  prop_length_t length = import_name_p->prop.length;
-  module_node_p->module_names_p->import_name.length = length;
-  module_node_p->module_names_p->import_name.value_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
-  memcpy (module_node_p->module_names_p->import_name.value_p, import_name_p->u.char_p, length);
+  module_node_p->module_names_p->import_name_p = ecma_new_ecma_string_from_utf8 (import_name_p->u.char_p,
+                                                                                 import_name_p->prop.length);
 
-  length = local_name_p->prop.length;
-  module_node_p->module_names_p->local_name.length = length;
-  module_node_p->module_names_p->local_name.value_p = (uint8_t *) parser_malloc (context_p, length * sizeof (uint8_t));
-  memcpy (module_node_p->module_names_p->local_name.value_p, local_name_p->u.char_p, length);
+  module_node_p->module_names_p->local_name_p = ecma_new_ecma_string_from_utf8 (local_name_p->u.char_p,
+                                                                                local_name_p->prop.length);
 
   module_node_p->module_request_count++;
 } /* parser_module_add_item_to_node */
@@ -541,14 +538,7 @@ parser_module_handle_requests (parser_context_t *context_p) /**< parser context 
     for (uint16_t j = 0; j < context_p->module_context_p->exports_p->module_request_count;
          ++j, export_iterator_p = export_iterator_p->next_p)
     {
-      if (import_name_p->local_name.length != export_iterator_p->import_name.length)
-      {
-        continue;
-      }
-
-      if (memcmp (import_name_p->local_name.value_p,
-                  export_iterator_p->import_name.value_p,
-                  import_name_p->local_name.length) == 0)
+      if (ecma_compare_ecma_strings (import_name_p->local_name_p, export_iterator_p->import_name_p))
       {
         request_is_found_in_module = true;
         break;

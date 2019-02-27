@@ -298,7 +298,7 @@ typedef struct
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
 /**
- * String struct for storing the module name.
+ * String struct for storing the module path.
  */
 typedef struct parser_module_utf8_string
 {
@@ -318,8 +318,8 @@ typedef struct parser_module_utf8_string
  */
 typedef struct parser_module_names
 {
-  parser_module_utf8_string_t import_name; /**< local name of the import - export item */
-  parser_module_utf8_string_t local_name;  /**< import name of the import - export item */
+  ecma_string_t *import_name_p; /**< local name of the import - export item */
+  ecma_string_t *local_name_p;  /**< import name of the import - export item */
 
   struct parser_module_names *next_p; /**< next linked list node */
 } parser_module_names_t;

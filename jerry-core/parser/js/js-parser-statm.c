@@ -1722,8 +1722,7 @@ parser_parse_import_statement (parser_context_t *context_p) /**< context */
     }
   }
 
-  if (context_p->token.type != LEXER_LITERAL || (context_p->token.type == LEXER_LITERAL
-      && !lexer_compare_raw_identifier_to_current (context_p, "from", 4)))
+  if (context_p->token.type != LEXER_LITERAL ||!lexer_compare_raw_identifier_to_current (context_p, "from", 4))
   {
     parser_raise_error (context_p, PARSER_ERR_FROM_EXPECTED);
   }

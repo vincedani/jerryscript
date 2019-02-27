@@ -45,12 +45,8 @@ parser_module_is_property_exported (ecma_string_t *property_name_p, /**< propert
   for (uint16_t i = 0; i < export_node_p->module_request_count; i++)
   {
     parser_module_names_t *next_p = current_p->next_p;
-    ecma_string_t *import_name_p = ecma_new_ecma_string_from_utf8 (current_p->local_name.value_p,
-                                                                   current_p->local_name.length);
 
-    bool found = ecma_compare_ecma_strings (import_name_p, property_name_p);
-
-    ecma_deref_ecma_string (import_name_p);
+    bool found = ecma_compare_ecma_strings (current_p->local_name_p, property_name_p);
 
     if (found)
     {
@@ -82,10 +78,7 @@ parser_module_compare_property_name_with_import (parser_module_node_t *module_no
   {
     parser_module_names_t *next_p = current_p->next_p;
 
-    if (current_p->local_name.length == export_names_p->import_name.length
-        && memcmp (export_names_p->import_name.value_p,
-                   current_p->local_name.value_p,
-                   current_p->local_name.length) == 0)
+    if (ecma_compare_ecma_strings (current_p->local_name_p, export_names_p->import_name_p))
     {
       return current_p;
     }
@@ -145,11 +138,8 @@ module_connect_properties (ecma_object_t *scope_p) /** scope_p */
       if (new_name_p != NULL)
       {
         ecma_property_t *new_property_p;
-        ecma_string_t *new_property_name_p = ecma_new_ecma_string_from_utf8 (new_name_p->import_name.value_p,
-                                                                             new_name_p->import_name.length);
-
         ecma_create_named_data_property (global_obj_p,
-                                         new_property_name_p,
+                                         new_name_p->import_name_p,
                                          ECMA_PROPERTY_NOT_WRITABLE,
                                          &new_property_p);
 
@@ -157,7 +147,6 @@ module_connect_properties (ecma_object_t *scope_p) /** scope_p */
                                               ECMA_PROPERTY_VALUE_PTR (new_property_p),
                                               prop_pair_p->values[i].value);
 
-        ecma_deref_ecma_string (new_property_name_p);
       }
       ecma_deref_ecma_string (prop_name_p);
     }
