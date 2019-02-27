@@ -90,7 +90,6 @@ typedef enum
   PARSER_ERR_LEFT_BRACE_EXPECTED,                     /**< left brace expected */
   PARSER_ERR_RIGHT_PAREN_EXPECTED,                    /**< right paren expected */
   PARSER_ERR_RIGHT_SQUARE_EXPECTED,                   /**< right square expected */
-  PARSER_ERR_LEFT_PAREN_MULTIPLY_LITERAL_EXPECTED,    /**< left paren or multiply or literal expected */
 
 #ifndef CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS
   PARSER_ERR_RIGHT_BRACE_EXPECTED,                    /**< right brace expected */
@@ -141,6 +140,7 @@ typedef enum
   PARSER_ERR_NOT_IMPLEMENTED,                         /**< feature not implemented yet */
   PARSER_ERR_MODULE_REQUEST_LIMIT_REACHED,            /**< maximum number of requests reached */
   PARSER_ERR_MODULE_UNEXPECTED,                       /**< unexpected import or export statement */
+  PARSER_ERR_LEFT_PAREN_MULTIPLY_LITERAL_EXPECTED,    /**< left paren or multiply or literal expected */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
   PARSER_ERR_NON_STRICT_ARG_DEFINITION               /**< non-strict argument definition */

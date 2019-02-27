@@ -78,12 +78,12 @@ ecma_module_add_lex_env (ecma_object_t *lex_env_p) /**< module lexenv */
   JERRY_ASSERT (lex_env_p != NULL);
   JERRY_ASSERT (ecma_is_lexical_environment (lex_env_p));
 
-  ecma_module_lex_envs_t *new_wrapper_p;
-  new_wrapper_p = jmem_heap_alloc_block (sizeof (ecma_module_lex_envs_t));
-  new_wrapper_p->lex_env_p = lex_env_p;
+  ecma_module_lex_envs_t *new_module_lex_env_p;
+  new_module_lex_env_p = jmem_heap_alloc_block (sizeof (ecma_module_lex_envs_t));
+  new_module_lex_env_p->lex_env_p = lex_env_p;
 
-  new_wrapper_p->next_p = JERRY_CONTEXT (ecma_module_lex_envs_p);
-  JERRY_CONTEXT (ecma_module_lex_envs_p) = new_wrapper_p;
+  new_module_lex_env_p->next_p = JERRY_CONTEXT (ecma_module_lex_envs_p);
+  JERRY_CONTEXT (ecma_module_lex_envs_p) = new_module_lex_env_p;
 } /* ecma_module_add_lex_env */
 
 /**

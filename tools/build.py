@@ -144,8 +144,6 @@ def get_arguments():
                          help=devhelp('enable Valgrind support (%(choices)s)'))
     coregrp.add_argument('--vm-exec-stop', metavar='X', choices=['ON', 'OFF'], type=str.upper,
                          help='enable VM execution stopping (%(choices)s)')
-    coregrp.add_argument('--enable-module-system', metavar='X', choices=['ON', 'OFF'], type=str.upper,
-                         help='enable ES6 module system (%(choices)s)')
 
     maingrp = parser.add_argument_group('jerry-main options')
     maingrp.add_argument('--link-map', metavar='X', choices=['ON', 'OFF'], type=str.upper,
@@ -214,7 +212,6 @@ def generate_build_options(arguments):
     build_options_append('FEATURE_SYSTEM_ALLOCATOR', arguments.system_allocator)
     build_options_append('FEATURE_VALGRIND', arguments.valgrind)
     build_options_append('FEATURE_VM_EXEC_STOP', arguments.vm_exec_stop)
-    build_options_append('FEATURE_MODULE_SYSTEM', arguments.enable_module_system)
 
     # jerry-main options
     build_options_append('ENABLE_LINK_MAP', arguments.link_map)
