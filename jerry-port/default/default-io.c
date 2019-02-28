@@ -122,7 +122,7 @@ jerry_port_get_file_size (FILE *file_p) /**< opened file */
  */
 uint8_t *
 jerry_port_module_read_source (const char *file_name_p, /**< file name */
-                               size_t *out_size_p) /**< read bytes */
+                               size_t *out_size_p) /**< [out] read bytes */
 {
   FILE *file_p = fopen (file_name_p, "rb");
 
