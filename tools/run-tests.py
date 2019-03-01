@@ -35,7 +35,7 @@ def skip_if(condition, desc):
 
 OPTIONS_PROFILE_MIN = ['--profile=minimal']
 OPTIONS_PROFILE_ES51 = [] # NOTE: same as ['--profile=es5.1']
-OPTIONS_PROFILE_ES2015 = ['--profile=es2015-subset', '--enable-module-system=ON']
+OPTIONS_PROFILE_ES2015 = ['--profile=es2015-subset']
 OPTIONS_VM_RECURSION_LIMIT = ['--vm-recursion-limit=1000']
 OPTIONS_DEBUG = ['--debug']
 OPTIONS_SNAPSHOT = ['--snapshot-save=on', '--snapshot-exec=on', '--jerry-cmdline-snapshot=on']
