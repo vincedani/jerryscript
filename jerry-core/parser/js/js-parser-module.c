@@ -52,13 +52,12 @@ parser_module_check_for_duplicates_in_node (parser_module_node_t *module_node_p,
     lit_utf8_size_t current_length = 0;
     const uint8_t *current_p = ecma_string_get_chars (import_names_p->import_name_p, &current_length, &flags);
 
-    if (current_p != NULL && current_length == import_name_p->prop.length)
+    if (current_p != NULL && current_length == import_name_p->prop.length
+        && memcmp (current_p, import_name_p->u.char_p, current_length) == 0)
     {
-      if (memcmp (current_p, import_name_p->u.char_p, current_length) == 0)
-      {
-        return true;
-      }
+      return true;
     }
+
     import_names_p = import_names_p->next_p;
   }
 
@@ -183,9 +182,9 @@ parser_module_add_import_node_to_context (parser_context_t *context_p) /**< pars
   while (stored_imports != NULL)
   {
     if (stored_imports->script_path.length == module_node_p->script_path.length
-       && memcmp (stored_imports->script_path.value_p,
-                  module_node_p->script_path.value_p,
-                  stored_imports->script_path.length) == 0)
+        && memcmp (stored_imports->script_path.value_p,
+                   module_node_p->script_path.value_p,
+                   stored_imports->script_path.length) == 0)
     {
       parser_free (module_node_p->script_path.value_p, module_node_p->script_path.length * sizeof (uint8_t));
 
@@ -234,8 +233,8 @@ parser_module_add_item_to_node (parser_context_t *context_p, /**< parser context
                                 lexer_literal_t *local_name_p, /**< local name */
                                 bool is_import_item) /**< given item is import item */
 {
-  if (is_import_item &&
-      parser_module_check_for_duplicates (context_p, module_node_p, import_name_p))
+  if (is_import_item
+      && parser_module_check_for_duplicates (context_p, module_node_p, import_name_p))
   {
     parser_raise_error (context_p, PARSER_ERR_DUPLICATED_LABEL);
   }
@@ -283,7 +282,7 @@ parser_module_context_cleanup (parser_context_t *context_p) /**< parser context 
 
   parser_module_context_t *parent_context_p = JERRY_CONTEXT (module_top_context_p);
   if ((parent_context_p == NULL || parent_context_p->exports_p == NULL || parent_context_p->imports_p == NULL)
-    && module_context_p->exports_p != NULL)
+      && module_context_p->exports_p != NULL)
   {
     parser_module_free_saved_names (module_context_p->exports_p);
     parser_free (module_context_p->exports_p, sizeof (parser_module_node_t));
@@ -481,7 +480,7 @@ parser_module_parse_import_item_list (parser_context_t *context_p) /**< parser c
 
     if (context_p->token.type == LEXER_RIGHT_BRACE
         || (context_p->token.type == LEXER_LITERAL
-        && lexer_compare_raw_identifier_to_current (context_p, "from", 4)))
+            && lexer_compare_raw_identifier_to_current (context_p, "from", 4)))
     {
       parser_module_add_item_to_node (context_p, module_node_p, import_name_p, local_name_p, true);
       break;
