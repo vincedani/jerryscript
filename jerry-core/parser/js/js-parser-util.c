@@ -1102,6 +1102,14 @@ parser_error_to_string (parser_error_t error) /**< error code */
     {
       return "Import and export statements must be in the global context.";
     }
+    case PARSER_ERR_INVALID_ALIASES:
+    {
+      return "Invalid aliases in the import statement.";
+    }
+    case PARSER_ERR_DUPLICATED_DEFAULT_ITEM:
+    {
+      return "Duplicated default export item.";
+    }
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
     default:

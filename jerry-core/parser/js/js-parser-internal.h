@@ -321,6 +321,10 @@ typedef struct parser_module_names
   ecma_string_t *import_name_p; /**< local name of the import - export item */
   ecma_string_t *local_name_p;  /**< import name of the import - export item */
 
+  // TODO: Maybe these boolean values can be converted into flags in a dedicated variable?!
+  bool is_redirected_item; /**< indicates if this item is redirected */
+  bool is_default_item;    /**< indicates if this item is the default one */
+
   struct parser_module_names *next_p; /**< next linked list node */
 } parser_module_names_t;
 
@@ -396,8 +400,9 @@ typedef struct
   parser_stack_iterator_t last_statement;     /**< last statement position */
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
-  parser_module_context_t *module_context_p;  /**< shared module context inside the parser */
+  parser_module_context_t *module_context_p;   /**< shared module context inside the parser */
   parser_module_node_t *module_current_node_p; /**< import / export node that is being processed */
+  bool module_processing_default_item;         /**< is the current import / export is the default one */
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 
   /* Lexer members. */
@@ -625,6 +630,10 @@ void parser_module_handle_requests (parser_context_t *context_p);
 void parser_module_partial_cleanup_on_error (parser_module_node_t *module_node_p);
 void parser_module_parse_export_item_list (parser_context_t *context_p);
 void parser_module_parse_import_item_list (parser_context_t *context_p);
+void parser_module_set_default (parser_context_t *context_p);
+void parser_module_set_redirection (parser_context_t *context_p, bool is_redirected);
+bool parser_module_is_whole_module_requested (parser_module_node_t *module_node_p,
+                                              parser_module_names_t *eventual_names_p);
 
 parser_module_node_t *parser_module_create_module_node (parser_context_t *context_p,
                                                         parser_module_node_t *template_node_p);
