@@ -133,8 +133,10 @@ ecma_module_connect_properties (ecma_object_t *scope_p) /** scope_p */
         continue;
       }
 
-      parser_module_names_t *new_name_p = ecma_parser_module_compare_property_name_with_import (module_context_p->imports_p,
-                                                                                           exported_name_p);
+      parser_module_names_t *new_name_p =
+      ecma_parser_module_compare_property_name_with_import (module_context_p->imports_p,
+                                                            exported_name_p);
+
       if (new_name_p != NULL)
       {
         ecma_property_t *new_property_p;
