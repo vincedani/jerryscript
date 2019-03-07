@@ -20,7 +20,7 @@
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
 
-void module_load_modules (parser_context_t *context_p);
+void ecma_module_load_modules (parser_context_t *context_p);
 
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 

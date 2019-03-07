@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "module.h"
 #include "jerryscript.h"
 #include "jcontext.h"
 
@@ -22,6 +21,7 @@
 #include "ecma-literal-storage.h"
 #include "ecma-lex-env.h"
 #include "ecma-gc.h"
+#include "ecma-module.h"
 #include "vm.h"
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
@@ -32,8 +32,8 @@
  *          NULL - otherwise
  */
 static parser_module_names_t *
-parser_module_is_property_exported (ecma_string_t *property_name_p, /**< property name */
-                                    parser_module_node_t *export_node_p) /**< export node */
+ecma_parser_module_is_property_exported (ecma_string_t *property_name_p, /**< property name */
+                                         parser_module_node_t *export_node_p) /**< export node */
 {
   parser_module_names_t *current_p = export_node_p->module_names_p;
 
@@ -56,7 +56,7 @@ parser_module_is_property_exported (ecma_string_t *property_name_p, /**< propert
   }
 
   return NULL;
-} /* parser_module_is_property_exported */
+} /* ecma_parser_module_is_property_exported */
 
 /**
  * Compare property name with imports.
@@ -64,8 +64,8 @@ parser_module_is_property_exported (ecma_string_t *property_name_p, /**< propert
  *         NULL - otherwise
  */
 static parser_module_names_t *
-parser_module_compare_property_name_with_import (parser_module_node_t *module_node_p, /**< module node */
-                                                 parser_module_names_t *export_names_p) /**< export names */
+ecma_parser_module_compare_property_name_with_import (parser_module_node_t *module_node_p, /**< module node */
+                                                      parser_module_names_t *export_names_p) /**< export names */
 {
   parser_module_names_t *current_p = module_node_p->module_names_p;
 
@@ -87,13 +87,13 @@ parser_module_compare_property_name_with_import (parser_module_node_t *module_no
   }
 
   return NULL;
-} /* parser_module_compare_property_name_with_import */
+} /* ecma_parser_module_compare_property_name_with_import */
 
 /**
  * Connect the imported script's properties to the main script.
  */
 static void
-module_connect_properties (ecma_object_t *scope_p) /** scope_p */
+ecma_module_connect_properties (ecma_object_t *scope_p) /** scope_p */
 {
   JERRY_ASSERT (ecma_is_lexical_environment (scope_p));
   JERRY_ASSERT (ecma_get_lex_env_type (scope_p) == ECMA_LEXICAL_ENVIRONMENT_DECLARATIVE);
@@ -124,7 +124,7 @@ module_connect_properties (ecma_object_t *scope_p) /** scope_p */
 
       ecma_string_t *prop_name_p = ecma_string_from_property_name (*property_p, prop_pair_p->names_cp[i]);
 
-      parser_module_names_t *exported_name_p = parser_module_is_property_exported (prop_name_p,
+      parser_module_names_t *exported_name_p = ecma_parser_module_is_property_exported (prop_name_p,
                                                                                    module_context_p->exports_p);
 
       if (exported_name_p == NULL)
@@ -133,7 +133,7 @@ module_connect_properties (ecma_object_t *scope_p) /** scope_p */
         continue;
       }
 
-      parser_module_names_t *new_name_p = parser_module_compare_property_name_with_import (module_context_p->imports_p,
+      parser_module_names_t *new_name_p = ecma_parser_module_compare_property_name_with_import (module_context_p->imports_p,
                                                                                            exported_name_p);
       if (new_name_p != NULL)
       {
@@ -157,13 +157,13 @@ module_connect_properties (ecma_object_t *scope_p) /** scope_p */
 
   ecma_module_add_lex_env (scope_p);
   parser_module_free_saved_names (module_context_p->exports_p);
-} /* module_connect_properties */
+} /* ecma_module_connect_properties */
 
 /**
- * Run an EcmaScript module loaded by module_load_modules.
+ * Run an EcmaScript module loaded by ecma_module_load_modules.
  */
 static parser_error_t
-parser_module_run (const char *file_path_p, /**< file path */
+ecma_parser_module_run (const char *file_path_p, /**< file path */
                    size_t path_size, /**< length of the path */
                    const char *source_p, /**< module source */
                    size_t source_size, /**< length of the source */
@@ -208,18 +208,18 @@ parser_module_run (const char *file_path_p, /**< file path */
     error = PARSER_ERR_MODULE_REQUEST_NOT_FOUND;
   }
 
-  module_connect_properties (scope_p);
+  ecma_module_connect_properties (scope_p);
   jerry_release_value (func_val);
 
   JERRY_CONTEXT (module_top_context_p) = prev_module_context_p;
   return error;
-} /* parser_module_run */
+} /* ecma_parser_module_run */
 
 /**
  * Load imported modules.
  */
 void
-module_load_modules (parser_context_t *context_p) /**< parser context */
+ecma_module_load_modules (parser_context_t *context_p) /**< parser context */
 {
   parser_module_node_t *current_p = context_p->module_context_p->imports_p;
 
@@ -236,7 +236,7 @@ module_load_modules (parser_context_t *context_p) /**< parser context */
       parser_raise_error (context_p, PARSER_ERR_FILE_NOT_FOUND);
     }
 
-    parser_error_t error = parser_module_run ((const char *) script_path_p,
+    parser_error_t error = ecma_parser_module_run ((const char *) script_path_p,
                                               path_length,
                                               (const char *) buffer_p,
                                               size,
@@ -251,6 +251,6 @@ module_load_modules (parser_context_t *context_p) /**< parser context */
 
     current_p = current_p->next_p;
   }
-} /* module_load_modules */
+} /* ecma_module_load_modules */
 
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */

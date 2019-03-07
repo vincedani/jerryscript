@@ -24,8 +24,8 @@
 #include "ecma-helpers.h"
 #include "ecma-literal-storage.h"
 #include "ecma-lex-env.h"
+#include "ecma-module.h"
 
-#include "module.h"
 
 #ifndef CONFIG_DISABLE_ES2015_MODULE_SYSTEM
 /**
@@ -153,7 +153,7 @@ parser_module_add_export_node_to_context (parser_context_t *context_p) /**< pars
 
     int request_count = exports_p->module_request_count + module_node_p->module_request_count;
 
-    if (request_count < MAX_IMPORT_COUNT)
+    if ((uint16_t) request_count < MAX_IMPORT_COUNT)
     {
       exports_p->module_request_count = (uint16_t) request_count;
     }
@@ -200,7 +200,7 @@ parser_module_add_import_node_to_context (parser_context_t *context_p) /**< pars
       stored_imports->module_names_p = module_node_p->module_names_p;
 
       int request_count = stored_imports->module_request_count + module_node_p->module_request_count;
-      if (request_count < MAX_IMPORT_COUNT)
+      if ((uint16_t) request_count < MAX_IMPORT_COUNT)
       {
         stored_imports->module_request_count = (uint16_t) request_count;
       }

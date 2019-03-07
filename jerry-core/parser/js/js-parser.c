@@ -19,7 +19,7 @@
 #include "ecma-literal-storage.h"
 #include "jcontext.h"
 #include "js-parser-internal.h"
-#include "module.h"
+#include "ecma-module.h"
 
 #ifndef JERRY_DISABLE_JS_PARSER
 
@@ -2465,7 +2465,7 @@ parser_parse_source (const uint8_t *arg_list_p, /**< function argument list */
     if (context.module_context_p != NULL)
     {
       parser_module_handle_requests (&context);
-      module_load_modules (&context);
+      ecma_module_load_modules (&context);
     }
 #endif /* !CONFIG_DISABLE_ES2015_MODULE_SYSTEM */
 

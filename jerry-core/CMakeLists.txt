@@ -113,7 +113,6 @@ set(INCLUDE_CORE_PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/jmem"
     "${CMAKE_CURRENT_SOURCE_DIR}/jrt"
     "${CMAKE_CURRENT_SOURCE_DIR}/lit"
-    "${CMAKE_CURRENT_SOURCE_DIR}/module"
     "${CMAKE_CURRENT_SOURCE_DIR}/parser/js"
     "${CMAKE_CURRENT_SOURCE_DIR}/parser/regexp"
     "${CMAKE_CURRENT_SOURCE_DIR}/vm")
@@ -134,7 +133,6 @@ file(GLOB SOURCE_CORE_FILES
      jmem/*.c
      jrt/*.c
      lit/*.c
-     module/*.c
      parser/js/*.c
      parser/regexp/*.c
      vm/*.c)
